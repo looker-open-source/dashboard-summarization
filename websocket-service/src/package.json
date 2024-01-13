@@ -1,0 +1,20 @@
+{
+  "name": "websocket-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/vertexai": "^0.2.0",
+    "@looker/sdk": "^23.20.1",
+    "@looker/sdk-node": "^23.20.1",
+    "@looker/sdk-rtl": "^21.6.1",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.3"
+  }
+}

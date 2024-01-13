@@ -1,0 +1,13 @@
+node_modules
+websocket-service/src/looker.ini
+websocket-service/src/node_modules
+websocket-service-chat/looker.ini
+websocket-service-chat/node_modules
+.env
+websocket-service/terraform/.terraform
+websocket-service/terraform/.terraform.lock.hcl
+websocket-service/terraform/terraform.tfstate
+websocket-service/terraform/terraform.tfstate.backup
+websocket-service-chat/*
+websocket-service-chat
+dist
