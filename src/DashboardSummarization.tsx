@@ -27,9 +27,6 @@ interface DashboardMetadata {
   }
 }
 
-/**
- * A simple component that uses the Looker SDK through the extension sdk to display a customized hello message.
- */
 export const DashboardSummarization: React.FC = () => {
   const { extensionSDK, tileHostData, core40SDK} = useContext(ExtensionContext)
   const { dashboardFilters, dashboardId } = tileHostData
