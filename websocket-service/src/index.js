@@ -89,8 +89,8 @@ io.on('connection', async (socket) => {
                             '''
                             ${context}
                             '''
-
-                            Additionally here is an example of a formatted response in Markdown that you should follow, please don't include this specifically in the response:
+                            
+                            Additionally here is an example of a formatted response in Markdown that you should follow, please use this as an example of how to structure your response and not verbatim copy the example text into your responses:
                             ## Query Name \n
                             Web Traffic Over Time \n
 
@@ -108,6 +108,7 @@ io.on('connection', async (socket) => {
                             * Look into the data for the month of March to determine if there was an issue in reporting and/or what sort of local events could have caused the spike
                             * Continue investing into search advertisement with common digital marketing strategies. IT would also be good to identify/breakdown this number by campaign source and see what strategies have been working well for Search.
                             * Display seems to be dropping off and variable. Use only during select months and optimize for heavily trafficed areas with a good demographic for the site retention. \n
+
                             `
                         }
                     ]
