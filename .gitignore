@@ -10,4 +10,3 @@ websocket-service/terraform/terraform.tfstate
 websocket-service/terraform/terraform.tfstate.backup
 websocket-service-chat/*
 websocket-service-chat
-dist
