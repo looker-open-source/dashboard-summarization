@@ -65,6 +65,7 @@ io.on('connection', async (socket) => {
     for (const query of JSON.parse(data).queries) {
         const queryData = await runLookerQuery(query.id)
         const context = `
+        Dashboard Detail: ${JSON.parse(data).description || ''} \n
         Query Details: \n  "Query Fields: ${query.fields} \n Query Data: ${queryData}"
         `
         const prompt = {
