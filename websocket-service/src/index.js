@@ -66,7 +66,7 @@ io.on('connection', async (socket) => {
         const queryData = await runLookerQuery(query.id)
         const context = `
         Dashboard Detail: ${JSON.parse(data).description || ''} \n
-        Query Details: \n  "Query Fields: ${query.fields} \n Query Data: ${queryData}"
+        Query Details: \n  "Query Title: ${query.title} ${query.note_text !== '' || query.note_text !== null ? "Query Note: " + query.note_text : ''} Query Fields: ${query.fields} \n Query Data: ${queryData}"
         `
         const prompt = {
             contents: [
@@ -78,17 +78,17 @@ io.on('connection', async (socket) => {
                             
                             You always answer with markdown formatting. You will be penalized if you do not answer with markdown when it would be possible.
                             The markdown formatting you support: headings, bold, italic, links, tables, lists, code blocks, and blockquotes.
-                            You do not support images and never include images. You will be penalized if you render images. 
+                            You do not support images and never include images. You will be penalized if you render images. You will always format numerical values as either percentages or in dollar amounts rounded to the nearest cent.
                             
                             Your response for each dashboard query should always start on a new line in markdown and include the following attributes starting with: 
-                             - \"Query Name\": is a markdown heading and should be generated based off of the fields and data returned. The query name itself should be on a newline.
-                             - \"Description\": should start on a newline and the generated description should be a paragraph starting on a newline. It should be 2-4 sentences max describing the query itself and should be as descriptive as possible.
-                             - \"Summary\": should be 2-4 sentences max summarizing the results of the query being  as knowledgeable as possible with the goal to give the user as much information as needed so that they don't have to investigate the dashboard themselves and be a blockquote not including any bullet points followed by a newline,
+                             - \"Query Name\": is a markdown heading and should use the "Query Title" from the "context." The query name itself should be on a newline.
+                             - \"Description\": should start on a newline and the generated description should be a paragraph starting on a newline. It should be 2-4 sentences max describing the query itself, using detailed information from the "context" and should be as descriptive as possible.
+                             - \"Summary\": should start with this image included <img src"https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/summarize_auto/default/24px.svg" height="10" width="10"/> and be 2-4 sentences max summarizing the results of the query being  as knowledgeable as possible with the goal to give the user as much information as needed so that they don't have to investigate the dashboard themselves and be a blockquote not including any bullet points. End with a newline,
                              - \"Next Steps\" section which should contain 2-3 bullet points drawing conclusions from the data and recommending next steps that should be clearly actionable followed by a newline 
                             Each dashboard query summary should start on a newline and end with a divider. Below are details on the dashboard and queries. The dashboard itself is an ecommerce dashboard focused on orders, users, web traffic, sales, inventory, and products. The data is updated in real time.
                             
                             '''
-                            ${context}
+                            Context: ${context}
                             '''
                             
                             Additionally here is an example of a formatted response in Markdown that you should follow, please use this as an example of how to structure your response and not verbatim copy the example text into your responses:
@@ -102,14 +102,14 @@ io.on('connection', async (socket) => {
                             ## Summary \n
                             > It looks like search historically has been driving the most user traffic with 9875 users over the past month with peak traffic happening in december at 1000 unique users.
                             Organic comes in second and display a distant 3rd. It seems that display got off to a decent start in the year, but has decreased in volume consistently into the end of the year.
-                            There appears to be a large spike in organic traffic during the month of March which seems odd as the rest of the year traffic was not at all close to that level.
+                            There appears to be a large spike in organic traffic during the month of March a 23% increase from the rest of the year.
                             \n
 
                             ## Next Steps
                             * Look into the data for the month of March to determine if there was an issue in reporting and/or what sort of local events could have caused the spike
                             * Continue investing into search advertisement with common digital marketing strategies. IT would also be good to identify/breakdown this number by campaign source and see what strategies have been working well for Search.
                             * Display seems to be dropping off and variable. Use only during select months and optimize for heavily trafficed areas with a good demographic for the site retention. \n
-
+                            \n
                             `
                         }
                     ]

@@ -137,6 +137,27 @@ button:-webkit-details-marker {
   blockquote p {
     display: inline;
   }
+
+  .li {
+    padding-left: 1ch;
+  }
+
+  @keyframes change-color {
+    from {
+      color: rgba(91,140,255,0.2)
+    }
+    to {
+      color: rgba(91,140,255,0.8)
+    }
+  }
+
+  /* li::marker {
+    content: url("https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/lightbulb_tips/default/24px.svg");
+    color: rgba(91,140,255,0.2);
+    animation-name: change-color;
+    animation-duration: 0.3s;
+    animation-timeline: view();
+  } */
   
   .app-container {
     width: 1000px;
@@ -291,4 +312,46 @@ div.markdown h3 {
 	transform-origin:center 100%;
 	animation: grow-progress auto linear;
 	animation-timeline: --page-scroll;
+}
+
+.summaryCard {
+  border-radius: 0.75rem;
+  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1);
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),var(--tw-ring-shadow, 0 0 #0000),var(--tw-shadow);
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.summaryCard:hover {
+  background: rgb(255,255,255);
+  background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(91,140,255,0.2) 100%);
+}
+
+@keyframes separator-width {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.separator {
+  --separator-size: 5px;
+  --separator-border-style: solid;
+  --separator-border-color: rgba(91,140,255,0.2);
+  --separator-space-top: 25px;
+  --separator-space-bottom: 80px;
+  margin-top: var(--separator-space-top);
+  margin-bottom: var(--separator-space-bottom);
+  border: 0;
+  border-bottom: var(--separator-size) dotted var(--separator-border-color);
+  width: 0;
+  animation: separator-width 3.5s ease-out forwards;
+  animation-timeline: view();
 }

@@ -10,9 +10,10 @@ export const App = hot(() => {
   const [formattedData, setFormattedData] = React.useState<string>('')
   const [info, setInfo] = React.useState(true)
   const [message, setMessage] = React.useState('')
+  const [dashboardURL, setDashboardURL] = React.useState<string>('')
   return (
     <ExtensionProvider>
-      <SummaryDataContext.Provider value={{ data, setData, formattedData, setFormattedData, info, setInfo, message, setMessage}}>
+      <SummaryDataContext.Provider value={{ data, setData, formattedData, setFormattedData, info, setInfo, message, setMessage, dashboardURL, setDashboardURL}}>
         <DashboardSummarization />
       </SummaryDataContext.Provider>
     </ExtensionProvider>

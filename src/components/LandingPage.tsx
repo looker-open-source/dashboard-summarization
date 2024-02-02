@@ -60,6 +60,7 @@ function LandingPage (){
         style={{
           display: 'flex',
           flexDirection: 'column',
+          alignItems: 'center',
           width: '100%',
           height: '100%',
           zIndex: 1,
@@ -78,24 +79,26 @@ function LandingPage (){
                 <div
                   style={{
                     cursor: 'pointer',
-                    width: '100%',
-                    height: '18vh',
+                    width: 'auto',
+                    maxWidth: '75vw',
+                    height: 'auto',
                     marginTop: '2rem',
-                    borderRadius: '5px',
-                    display: 'flex',
-                    flexDirection: 'row',
                   }}
+                  className="summaryCard"
                 >
                   <div
                     style={{
                       width: '20%',
-                      height: '100%',
+                      height: 'auto',
                       borderRight: '1px solid #ccc',
+                      display:'flex',
+                      flexDirection: 'column',
+                      justifyContent:'center'
                     }}
                   >
                     <img
-                      height="50%"
-                      width="70%"
+                      height={40}
+                      width={60}
                       src={
                         index === 0
                           ? 'https://lh3.googleusercontent.com/-1brN-k2sapOWO4gfdJKGEH8kZbfFjrzEMjNs1dl4u64PBH-yxVmB5vG2aHDatRudSByL3lwViUg1w'
@@ -105,7 +108,7 @@ function LandingPage (){
                   </div>
                   <div
                     style={{
-                      paddingTop: '1rem',
+                      paddingTop: '0.2rem',
                       paddingLeft: '1rem',
                       width: '80%',
                       height: 'auto',
@@ -116,10 +119,10 @@ function LandingPage (){
                     <span
                       style={{
                         height: 'auto',
-                        fontSize: '1.2rem',
+                        fontSize: '1.0rem',
                         fontWeight: 'bold',
                         fontFamily: 'sans-serif',
-                        letterSpacing: '-0.1rem',
+                        letterSpacing: '0.01rem',
                         display: 'block',
                         textAlign: 'left',
                         width: '100%',
@@ -136,7 +139,7 @@ function LandingPage (){
                     </p>
                     <p
                       style={{
-                        fontSize: '0.8rem',
+                        fontSize: '0.6rem',
                         width: 'auto',
                         height: 'auto',
                         color: 'black',
@@ -150,6 +153,13 @@ function LandingPage (){
               </a>
             )
           })}
+          <div style={{
+            position:'absolute',
+            bottom:'2rem',
+            right:'2rem'
+          }}>
+           
+          </div>
       </div>
     </>
   )

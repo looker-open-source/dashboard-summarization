@@ -3,7 +3,7 @@ import { ExtensionContext } from '@looker/extension-sdk-react'
 import { Filters } from '@looker/extension-sdk'
 import { BardLogo, LandingPage } from './components/LandingPage'
 import { socket } from './socket'
-import Markdown from 'react-markdown'
+import MarkdownComponent from './components/MarkdownComponent'
 import useWorkspaceOauth from './hooks/useWorkspaceOauth'
 import { SummaryDataContext } from './contexts/SummaryDataContext'
 import useSlackOauth from './hooks/useSlackOauth'
@@ -33,12 +33,13 @@ export const DashboardSummarization: React.FC = () => {
   const [dashboardMetadata, setDashboardMetadata] = useState<DashboardMetadata>()
   const [loadingDashboardMetadata, setLoadingDashboardMetadata] = useState<boolean>(false)
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const { data, setData, formattedData, setFormattedData, info, setInfo, message, setMessage } = useContext(SummaryDataContext)
+  const { data, setData, formattedData, setFormattedData, info, setInfo, message, setMessage, setDashboardURL } = useContext(SummaryDataContext)
   const [loading, setLoading] = useState(false)
   const workspaceOauth = useWorkspaceOauth()
   const slackOauth = useSlackOauth()
 
   useEffect(() => {
+    console.log(tileHostData, extensionSDK.lookerHostData)
     function onConnect(value) {
       console.log("Connected!!", value)
       setIsConnected(true);
@@ -58,6 +59,7 @@ export const DashboardSummarization: React.FC = () => {
     function onComplete(event:string) {
       console.log(event)
       setFormattedData(event.replace('```json','').replaceAll('```','').trim())
+      document.querySelector('blockquote')?.querySelectorAll('p')
       setLoading(false)
     }
 
@@ -95,7 +97,7 @@ export const DashboardSummarization: React.FC = () => {
       })
       
       const queries = await core40SDK.ok(core40SDK.dashboard_dashboard_elements(
-        dashboardId, 'query,result_maker'))
+        dashboardId, 'query,result_maker,note_text,title'))
         .then(
           (res) => {
             const queries = res
@@ -103,12 +105,13 @@ export const DashboardSummarization: React.FC = () => {
               .filter((d) => d.query !== null || d.result_maker !== null)
               .map((data) => {
                 console.log(data)
+                const { query, note_text,title } = data
                 if(data.query !== null) {
-                  const {id, fields, view, model} = data.query
-                  return {id, fields, view, model}
+                  const {id, fields, view, model} = query
+                  return {id, fields, view, model, note_text, title}
                 } else if(data.result_maker!.query !== null) {
                   const {id, fields, dynamic_fields, view, model } = data.result_maker!.query
-                  return { id, fields, dynamic_fields, view, model }
+                  return { id, fields, dynamic_fields, view, model,note_text,title }
                   // return undefined if the query is a merge query (since there is no query id and the query has to be reconstructed)
                 } else {
                   return undefined
@@ -144,14 +147,18 @@ export const DashboardSummarization: React.FC = () => {
     }
     fetchCachedMetadata().then((cachedMetadata) => {
       if (cachedMetadata !== null) {
+       setDashboardURL(extensionSDK.lookerHostData?.hostUrl + "/embed/dashboards/" + tileHostData.dashboardId)
        setLoadingDashboardMetadata(false)
        setMessage("Loaded Dashboard Metadata from cache. Click 'Summarize Dashboard' to Generate report summary.")
        setDashboardMetadata(JSON.parse(cachedMetadata || '{}'))
       } else if (tileHostData.dashboardRunState !== 'UNKNOWN') {
+        setDashboardURL(extensionSDK.lookerHostData?.hostUrl + "/embed/dashboards/" + tileHostData.dashboardId)
         fetchQueryMetadata()
       }
     })
   },[fetchQueryMetadata])
+
+
 
   return (
     <div style={{width:'100%', height:'95vh'}}>
@@ -199,9 +206,7 @@ export const DashboardSummarization: React.FC = () => {
       <div style={{height:'80%', marginBottom:'1rem'}}>
         <div className="summary-scroll">
         <div className='progress'></div>
-          <Markdown className="markdown">
-            {data.join(' ')}
-          </Markdown>
+          <MarkdownComponent data={data}/>
         </div>
       </div>
       :

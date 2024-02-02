@@ -4,7 +4,7 @@ import { SummaryDataContext } from '../contexts/SummaryDataContext'
 
 const useSlackOauth = () => {
     const { extensionSDK } = useContext(ExtensionContext)
-    const { formattedData, setInfo, setMessage } = useContext(SummaryDataContext)
+    const { formattedData, setInfo, setMessage, dashboardURL } = useContext(SummaryDataContext)
 
     async function slackOauthImplicitFlow(){
         try {
@@ -38,6 +38,26 @@ const useSlackOauth = () => {
 
     function slackRichTextFormatter(querySummaries: any) {
         const blocks: any[] = [];
+
+        blocks.push({
+			type: "section",
+			text: {
+				type: "mrkdwn",
+				text: "Summarized Dashboard in Looker",
+			},
+			accessory: {
+				type: "button",
+				text: {
+					type: "plain_text",
+					text: "Open",
+					emoji: true,
+				},
+				value: dashboardURL,
+				url: dashboardURL,
+				action_id: "button-action",
+			}
+		});
+
         (typeof(querySummaries) === 'string' ? JSON.parse(querySummaries) : querySummaries).forEach((query) => {
             Object.entries(query).forEach((value) => {
                 console.log(value)
