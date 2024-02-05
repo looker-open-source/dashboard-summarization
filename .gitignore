@@ -4,6 +4,7 @@ websocket-service/src/node_modules
 websocket-service-chat/looker.ini
 websocket-service-chat/node_modules
 .env
+dist
 websocket-service/terraform/.terraform
 websocket-service/terraform/.terraform.lock.hcl
 websocket-service/terraform/terraform.tfstate
