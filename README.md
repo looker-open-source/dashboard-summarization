@@ -47,13 +47,14 @@ Upcoming capabilities on the roadmap:
 - ---
 
 ## Setup
+
+![simple-architecture](./src/assets/dashboard-summarization-architecture.png)
+
 ### 1. Generative AI & Websocket Server
 
 This section describes how to set up the web server on Cloud Run powering the Generative AI and Websocket integrations
 
 #### Getting Started for Local Development
-
-![simple-architecture](./static/simple-architecture.png)
 
 1. Clone or download a copy of this repository to your development machine.
 
