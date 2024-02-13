@@ -15,5 +15,5 @@ variable "docker_image" {
 
 variable "cloud_run_service_name" {
     type = string
-    default = "websocket-service-test"
+    default = "websocket-service"
 }

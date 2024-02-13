@@ -65,7 +65,7 @@ export const DashboardSummarization: React.FC = () => {
   const slackOauth = useSlackOauth()
 
   useEffect(() => {
-    console.log(tileHostData, extensionSDK.lookerHostData)
+    
     function onConnect(value) {
       console.log("Connected!!", value)
       setIsConnected(true);
@@ -85,7 +85,7 @@ export const DashboardSummarization: React.FC = () => {
     function onComplete(event:string) {
       console.log(event)
       setFormattedData(event.replace('```json','').replaceAll('```','').trim())
-      document.querySelector('blockquote')?.querySelectorAll('p')
+      // document.querySelector('blockquote')?.querySelectorAll('p')
       setLoading(false)
     }
 
@@ -104,40 +104,54 @@ export const DashboardSummarization: React.FC = () => {
     };
   }, [])
 
+  useEffect(() => {
+    if(tileHostData.dashboardRunState === 'RUNNING') {
+      setData([])
+      setLoading(false)
+    }
+  },[dashboardFilters])
+
+  const applyFilterToListeners = (data,filters,dashboardFilters) => {
+    if(dashboardFilters !== null) {
+      const filterListeners = data.filter((item) => item.listen.length > 0)
+      // loop through each filter listener
+      
+      filterListeners.forEach((filter) => {
+        // loop through each individual listener and apply filter to query
+        filter.listen.forEach((listener) => {
+          filters[listener.field] = dashboardFilters[listener.dashboard_filter_name]
+        })
+      })
+      
+      return filters
+    }
+
+    return {}
+  }
+
   const fetchQueryMetadata = useCallback(async () => {
     if(dashboardId) {
       setLoadingDashboardMetadata(true)
       setMessage("Loading Dashboard Metadata")
-      const {dashboard_filters,description} = await core40SDK.ok(core40SDK.dashboard(dashboardId,'dashboard_filters,description'))
-      console.log("Description: ", description)
-      
-      const indexedFilters = {}
-
-      dashboard_filters!.forEach((filter) => {
-        const { explore, model, dimension} = filter
-        indexedFilters[filter.name] = {
-            ... {
-              explore, model, dimension
-            }
-          }
-      })
+      const {description} = await core40SDK.ok(core40SDK.dashboard(dashboardId,'description'))
       
       const queries = await core40SDK.ok(core40SDK.dashboard_dashboard_elements(
-        dashboardId, 'query,result_maker,note_text,title'))
+        dashboardId, 'query,result_maker,note_text,title,query_id'))
         .then(
           (res) => {
             const queries = res
               // query checks looker query, result maker checks custom fields
               .filter((d) => d.query !== null || d.result_maker !== null)
               .map((data) => {
-                console.log(data)
                 const { query, note_text,title } = data
                 if(data.query !== null) {
-                  const {id, fields, view, model} = query
-                  return {id, fields, view, model, note_text, title}
+                  const { fields, dynamic_fields, view, model, filters,pivots, sorts, limit, column_limit, row_total, subtotals } = query
+                  const newFilters = applyFilterToListeners(data.result_maker?.filterables,filters || {},dashboardFilters)
+                  return { queryBody: {fields, dynamic_fields, view, model, filters: newFilters, pivots, sorts, limit, column_limit, row_total, subtotals}, note_text,title }
                 } else if(data.result_maker!.query !== null) {
-                  const {id, fields, dynamic_fields, view, model } = data.result_maker!.query
-                  return { id, fields, dynamic_fields, view, model,note_text,title }
+                  const { fields, dynamic_fields, view, model, filters, pivots, sorts, limit, column_limit, row_total, subtotals } = data.result_maker!.query
+                  const newFilters = applyFilterToListeners(data.result_maker?.filterables,filters || {},dashboardFilters)
+                  return { queryBody: {fields, dynamic_fields, view, model, filters: newFilters, pivots, sorts, limit, column_limit, row_total, subtotals}, note_text,title }
                   // return undefined if the query is a merge query (since there is no query id and the query has to be reconstructed)
                 } else {
                   return undefined
@@ -151,11 +165,11 @@ export const DashboardSummarization: React.FC = () => {
           
         })
         if (!loadingDashboardMetadata) {
-          await extensionSDK.localStorageSetItem(`${dashboardId}:${JSON.stringify(dashboardFilters)}`,JSON.stringify({ dashboardFilters, dashboardId, queries, indexedFilters,description}))
-          setDashboardMetadata({ dashboardFilters, dashboardId, queries, indexedFilters,description})
+          await extensionSDK.localStorageSetItem(`${dashboardId}:${JSON.stringify(dashboardFilters)}`,JSON.stringify({ dashboardFilters, dashboardId, queries,description}))
+          setDashboardMetadata({ dashboardFilters, dashboardId, queries, description})
         }
     }
-  },[dashboardId])
+  },[dashboardId,dashboardFilters])
 
   useEffect(() => {
     if(message && message.includes('Loaded Dashboard Metadata') || message.includes("Google Chat") || message.includes("Slack")){
@@ -167,7 +181,6 @@ export const DashboardSummarization: React.FC = () => {
 
 
   useEffect(() => {
-    console.log(tileHostData)
     async function fetchCachedMetadata() {
       return await extensionSDK.localStorageGetItem(`${tileHostData.dashboardId}:${JSON.stringify(tileHostData.dashboardFilters)}`)
     }
@@ -183,8 +196,6 @@ export const DashboardSummarization: React.FC = () => {
       }
     })
   },[fetchQueryMetadata])
-
-
 
   return (
     <div style={{width:'100%', height:'95vh'}}>
@@ -206,12 +217,12 @@ export const DashboardSummarization: React.FC = () => {
       :
         <></>
       }
-      <div style={{height:'20%',display:'flex', flexDirection:'column', justifyContent:'space-between',marginBottom:'1.6rem'}}>
+      <div style={{height:'auto',display:'flex', flexDirection:'column', justifyContent:'space-evenly',marginBottom:'1.6rem'}}>
       <div className="layout" style={{boxShadow:'0px',paddingBottom:'1.2rem',marginBottom:'2rem',height:'50%'}}>
         <span style={{fontSize:'0.9rem',opacity:'0.8'}}>Summarize your Dashboard Queries</span>
         <button className='button' disabled={loading || !socket.connected} onClick={() => {
           setLoading(true)
-          socket.emit("my event", JSON.stringify(dashboardMetadata))
+          socket.emit("my event", JSON.stringify({...dashboardMetadata, instance:extensionSDK.lookerHostData?.hostOrigin?.split('https://')[1].split('.')[0]}))
         }}>Generate <img  style={{opacity: loading ? 0.2 : 1}}src="https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/summarize_auto/default/20px.svg"/></button>
       </div>
       <div className="layout" style={{boxShadow:'0px',opacity: !loading ? 1 : 0.2, height:'50%'}}>
@@ -222,14 +233,11 @@ export const DashboardSummarization: React.FC = () => {
         <button disabled={loading} onClick={slackOauth} className='button' style={{borderRadius:'50%',padding:'0.5rem'}}>
           <img height={20} width={20} src="https://cdn.worldvectorlogo.com/logos/slack-new-logo.svg"/>
         </button>
-        <button disabled={loading} className='button' style={{borderRadius:'50%',padding:'0.5rem'}}>
-          <img height={20} width={20} src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Google_Sheets_logo_%282014-2020%29.svg/98px-Google_Sheets_logo_%282014-2020%29.svg.png"/>
-        </button>
       </div>
       </div>
       {data.length > 0 
       ? 
-      <div style={{height:'80%', marginBottom:'1rem'}}>
+      <div style={{height:'90%', marginBottom:'1rem'}}>
         <div className="summary-scroll">
         <div className='progress'></div>
           <MarkdownComponent data={data}/>

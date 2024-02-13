@@ -123,7 +123,7 @@ function LandingPage (){
                     }}
                   >
                     <img
-                      height={40}
+                      height="auto"
                       width={60}
                       src={
                         index === 0

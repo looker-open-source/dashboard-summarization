@@ -30,7 +30,8 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require('socket.io')
 const {VertexAI} = require('@google-cloud/vertexai');
-const { LookerNodeSDK, NodeSettingsIniFile } = require('@looker/sdk-node')
+const { LookerNodeSDK, NodeSettingsIniFile } = require('@looker/sdk-node');
+const { IApiSettings } = require('@looker/sdk-rtl')
 
 const io = new Server(server, {
     pingInterval: 120,
@@ -45,27 +46,20 @@ app.get('/', (req, res) => {
     res.send('<h1>Hello world</h1>');
 });
 
-// setup looker sdk
-// Ignore any SDK environment variables for the node runtime
-const settings = new NodeSettingsIniFile('')
-const sdk = LookerNodeSDK.init40(settings)
-
-async function runLookerQuery(id) {
-    if(id !== '') {
-        try {
-            const { value } = await sdk.run_query({
-                query_id:id,
-                result_format:'csv',
-                cache:true,
-                limit:100
-            })
-            return value
-        } catch(e) {
-            console.log('There was an error calling Looker: ', e)
-        }
+async function runLookerQuery(sdk,data) {
+    try {
+        const query = await sdk.ok(sdk.create_query(data))
+        const value = await sdk.ok(sdk.run_query({
+            query_id:query.id,
+            result_format:'csv',
+            cache:true,
+            limit:200
+        }))
+        return value
+    } catch(e) {
+        console.log('There was an error calling Looker: ', e)
     }
 }
-//
 
 
 // Initialize Vertex with your Cloud project and location
@@ -75,6 +69,17 @@ const generativeModel = vertexAI.preview.getGenerativeModel({
     model: 'gemini-pro',
     generation_config: {max_output_tokens: 2500, temperature: 0.2, candidate_count: 1}
 });
+
+const writeStructuredLog = (message) => {
+    // Complete a structured log entry.
+   return {
+        severity: 'INFO',
+        message: message,
+        // Log viewer accesses 'component' as 'jsonPayload.component'.
+        component: 'dashboard-summarization-logs',
+    }
+}
+
 
 io.on('connection', async (socket) => {
   console.log("initial transport", socket.conn.transport.name); // prints "polling"
@@ -86,83 +91,108 @@ io.on('connection', async (socket) => {
 
   
   socket.on('my event', async (data) => {
+    // setup looker sdk
+    // Ignore any SDK environment variables for the node runtime
+    const settings = new NodeSettingsIniFile('','looker.ini',JSON.parse(data).instance)
+    const sdk = LookerNodeSDK.init40(settings)
+
     const querySummaries = []
-    
     for (const query of JSON.parse(data).queries) {
-        const queryData = await runLookerQuery(query.id)
-        const context = `
-        Dashboard Detail: ${JSON.parse(data).description || ''} \n
-        Query Details: \n  "Query Title: ${query.title} ${query.note_text !== '' || query.note_text !== null ? "Query Note: " + query.note_text : ''} Query Fields: ${query.fields} \n Query Data: ${queryData}"
-        `
-        const prompt = {
-            contents: [
-                {
-                    role: 'user', parts:[
-                        {
-                            text: `
-                            You are a specialized answering assistant that can summarize a Looker dashboard and the underlying data and propose operational next steps.
-                            
-                            You always answer with markdown formatting. You will be penalized if you do not answer with markdown when it would be possible.
-                            The markdown formatting you support: headings, bold, italic, links, tables, lists, code blocks, and blockquotes.
-                            You do not support images and never include images. You will be penalized if you render images. You will always format numerical values as either percentages or in dollar amounts rounded to the nearest cent.
-                            
-                            Your response for each dashboard query should always start on a new line in markdown and include the following attributes starting with: 
-                             - \"Query Name\": is a markdown heading and should use the "Query Title" from the "context." The query name itself should be on a newline.
-                             - \"Description\": should start on a newline and the generated description should be a paragraph starting on a newline. It should be 2-4 sentences max describing the query itself, using detailed information from the "context" and should be as descriptive as possible.
-                             - \"Summary\": should start with this image included <img src"https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/summarize_auto/default/24px.svg" height="10" width="10"/> and be 2-4 sentences max summarizing the results of the query being  as knowledgeable as possible with the goal to give the user as much information as needed so that they don't have to investigate the dashboard themselves and be a blockquote not including any bullet points. End with a newline,
-                             - \"Next Steps\" section which should contain 2-3 bullet points drawing conclusions from the data and recommending next steps that should be clearly actionable followed by a newline 
-                            Each dashboard query summary should start on a newline and end with a divider. Below are details on the dashboard and queries. The dashboard itself is an ecommerce dashboard focused on orders, users, web traffic, sales, inventory, and products. The data is updated in real time.
-                            
-                            '''
-                            Context: ${context}
-                            '''
-                            
-                            Additionally here is an example of a formatted response in Markdown that you should follow, please use this as an example of how to structure your response and not verbatim copy the example text into your responses:
-                            ## Query Name \n
-                            Web Traffic Over Time \n
-
-                            ## Description \n
-                            This query details the amount of web traffic received to the website over the past 6 months. It includes a web traffic source field of organic, search and display
-                            as well as an amount field detailing the amount of people coming from those sources to the website. \n
-
-                            ## Summary \n
-                            > It looks like search historically has been driving the most user traffic with 9875 users over the past month with peak traffic happening in december at 1000 unique users.
-                            Organic comes in second and display a distant 3rd. It seems that display got off to a decent start in the year, but has decreased in volume consistently into the end of the year.
-                            There appears to be a large spike in organic traffic during the month of March a 23% increase from the rest of the year.
-                            \n
-
-                            ## Next Steps
-                            * Look into the data for the month of March to determine if there was an issue in reporting and/or what sort of local events could have caused the spike
-                            * Continue investing into search advertisement with common digital marketing strategies. IT would also be good to identify/breakdown this number by campaign source and see what strategies have been working well for Search.
-                            * Display seems to be dropping off and variable. Use only during select months and optimize for heavily trafficed areas with a good demographic for the site retention. \n
-                            \n
-                            `
-                        }
-                    ]
-                }
-            ]
+        const queryData = await runLookerQuery(sdk,query.queryBody)
+    
+            const context = `
+            Dashboard Detail: ${JSON.parse(data).description || ''} \n
+            Query Details:  "Query Title: ${query.title} \n ${query.note_text !== '' || query.note_text !== null ? "Query Note: " + query.note_text : ''} \n Query Fields: ${query.queryBody.fields} \n Query Data: ${queryData} \n"
+            `
+            const queryPrompt = `
+            You are a specialized answering assistant that can summarize a Looker dashboard and the underlying data and propose operational next steps drawing conclusions from the Query Details listed above.
+            
+            You always answer with markdown formatting. You will be penalized if you do not answer with markdown when it would be possible.
+            The markdown formatting you support: headings, bold, italic, links, tables, lists, code blocks, and blockquotes.
+            You do not support images and never include images. You will be penalized if you render images. You will always format numerical values as either percentages or in dollar amounts rounded to the nearest cent. You should not indent any response.
+            
+            Your response for each dashboard query should always start on a new line in markdown, should not be indented and should include the following attributes starting with: 
+            - \"Query Name\": is a markdown heading and should use the Query Title data from the "context." The query name itself should be on a newline and should not be indented.
+            - \"Description\": should start on a newline, should not be indented and the generated description should be a paragraph starting on a newline. It should be 2-4 sentences max describing the query itself and should be as descriptive as possible.
+            - \"Summary\": should start with this image included <img src"https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/summarize_auto/default/24px.svg" height="10" width="10"/>, should not be indented and should be 2-4 sentences max summarizing the results of the query being as knowledgeable as possible with the goal to give the user as much information as needed so that they don't have to investigate the dashboard themselves and be a blockquote not including any bullet points. End with a newline,
+            - \"Next Steps\" section which should contain 2-3 bullet points, that are not indented, drawing conclusions from the data and recommending next steps that should be clearly actionable followed by a newline 
+            Each dashboard query summary should start on a newlin, should not be indented, and should end with a divider. Below are details on the dashboard and queries. \n
+            
+            '''
+            Context: ${context}
+            '''
+            
+            Additionally here is an example of a formatted response in Markdown that you should follow, please use this as an example of how to structure your response and not verbatim copy the example text into your responses. \n
+            
+            ## Query Name \n
+            Web Traffic Over Time \n
+            
+            ## Description \n
+            This query details the amount of web traffic received to the website over the past 6 months. It includes a web traffic source field of organic, search and display
+            as well as an amount field detailing the amount of people coming from those sources to the website. \n
+            
+            ## Summary \n
+            > It looks like search historically has been driving the most user traffic with 9875 users over the past month with peak traffic happening in december at 1000 unique users.
+            Organic comes in second and display a distant 3rd. It seems that display got off to a decent start in the year, but has decreased in volume consistently into the end of the year.
+            There appears to be a large spike in organic traffic during the month of March a 23% increase from the rest of the year.
+            \n
+            
+            ## Next Steps
+            * Look into the data for the month of March to determine if there was an issue in reporting and/or what sort of local events could have caused the spike
+            * Continue investing into search advertisement with common digital marketing strategies. IT would also be good to identify/breakdown this number by campaign source and see what strategies have been working well for Search.
+            * Display seems to be dropping off and variable. Use only during select months and optimize for heavily trafficed areas with a good demographic for the site retention.\n
+            \n
+            `
+            const prompt = {
+                contents: [
+                    {
+                        role: 'user', parts:[
+                            {
+                                text: queryPrompt
+                            }
+                        ]
+                    }
+                ]
         }
-
+        
         
         const streamingResp = await generativeModel.generateContentStream(prompt)
         
         for await (const item of streamingResp.stream) {
-            socket.emit('my broadcast event', item.candidates[0].content.parts[0].text)
+            if(item.candidates[0].content.parts[0].text !== null) {
+                const formattedString = item.candidates[0].content.parts[0].text.split('\n').map(item => item.trim()).join('\n')
+                socket.emit('my broadcast event', formattedString)
+                console.log(formattedString)
+            }
         }
-            
+        
+        const queryResponse = await streamingResp.response
         querySummaries.push(
-            JSON.stringify((await streamingResp.response).candidates[0].content.parts[0].text)
-        )
+            JSON.stringify(queryResponse.candidates[0].content.parts[0].text)
+            )
+            
+            // log billable characters for price monitoring
+            console.log(
+                JSON.stringify(
+                    writeStructuredLog(
+                        { 
+                            input_characters: (await generativeModel.countTokens(prompt)).totalBillableCharacters, 
+                            output_characters: (await generativeModel.countTokens({ contents: queryResponse.candidates[0].content })).totalBillableCharacters 
+                        }
+                    )
+                )
+            )
+                    
     }
 
-    const formattedResp = await generativeModel.generateContent(
-        { contents: [{ role: 'user', parts: [{ text: `
-            Please format the following data as the json object below
-
-            data: ${JSON.stringify(querySummaries)}
-
-            json object:
-            [
+        // construct final prompt
+        const finalPromptData = `
+        Please format the following data as the json object below
+                            
+        data: ${JSON.stringify(querySummaries)}
+                            
+        json object:
+        [
             {
                 query_name: ...,
                 description: ...,
@@ -171,15 +201,30 @@ io.on('connection', async (socket) => {
                     ...,
                 ]
             },
-            ]
-            `
-            }]
-            }]
+        ]
+        `
+                            
+        const finalPrompt = {
+            contents: [{ role: 'user', parts: [{ text: finalPromptData}]}]
         }
-    )
-    socket.emit("complete",formattedResp.response.candidates[0].content.parts[0].text)
-  })
-  
+                            
+        const formattedResp = await generativeModel.generateContent(finalPrompt)
+                        
+        // log character counts for price monitoring
+        socket.emit("complete",formattedResp.response.candidates[0].content.parts[0].text)
+        console.log(
+            JSON.stringify(
+                writeStructuredLog(
+                    { 
+                        input_characters: (await generativeModel.countTokens(finalPrompt)).totalBillableCharacters, 
+                        output_characters: (await generativeModel.countTokens({ contents: formattedResp.response.candidates[0].content })).totalBillableCharacters
+                    }
+                )
+            )
+        )                               
+            
+    })
+                                
   socket.on('connect', () => {
     console.log("Connected!")
     socket.broadcast.emit('my response', {

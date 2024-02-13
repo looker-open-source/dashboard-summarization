@@ -22,6 +22,7 @@ Additionally, the extension provides:
 
 Upcoming capabilities on the roadmap:
 
+ - Next Steps to Visualization
  - Google Slides Integration
  - Regenerate and Refine (*regenerate summary with custom input prompt*)
 
@@ -77,6 +78,19 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 
    > You may need to update your Node version or use a [Node version manager](https://github.com/nvm-sh/nvm) to change your Node version.
 
+3. Update `looker-example.ini` to `looker.ini` and replace environment variables Admin API Credentials. **IMPORTANT** use a section header that matches the host of your Looker instance. Example below:
+
+Ex: Looker instance -> https://mycompany.cloud.looker.com
+```
+[mycompany]
+base_url=
+client_id=
+client_secret=
+verify_ssl=true
+```
+
+This is configured to support deployment to multiple Looker instances reusing the same backend.
+
 4. Start the development server
 
    ```bash
@@ -89,7 +103,7 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 1. Build Docker File and Submit to Artifact Registry
 *Skip this step if you already have a deployed image.*
 	```bash
-	gcloud auth login && gcloud builds submit --region=us-west2 --config cloudbuild.yaml
+	gcloud auth login && gcloud auth application-default login && gcloud builds submit --region=us-west2 --config cloudbuild.yaml
 	```
 	Save the returned docker image url.
 2. Navigate (`cd`) to the terraform directory on your system
@@ -98,7 +112,7 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 	```
 3. Replace defaults in the `variables.tf` file for project, region, docker url and service name.
 
-4. Deploy resources.
+4. Deploy resources. [*Ensure Application Default Credentials for GCP for Exported in your Environment first.*](https://cloud.google.com/docs/authentication/provide-credentials-adc#google-idp)
 
    ```terraform
    terraform init
@@ -109,6 +123,19 @@ This section describes how to set up the web server on Cloud Run powering the Ge
    ```
 
 5. Save Deployed Cloud Run URL Endpoint
+
+#### Optional: Setup Log Sink to BQ for LLM Cost Estimation and Request Logging
+
+This extension will make a call to Vertex for each query in the dashboard and one final call to format all the summaries. Each request is logged with billable characters that can be used to 
+estimate and monitor costs. Please see [Google Cloud's docs](https://cloud.google.com/logging/docs/export/configure_export_v2#creating_sink) on setting up a log sink to BQ, using the below filter for Dashboard Summarization Logs (*change location and service name if those variables have been updated*):
+
+```
+resource.type = "cloud_run_revision"
+resource.labels.service_name = "websocket-service"
+resource.labels.location = "us-central1"
+ severity>=DEFAULT
+jsonPayload.component="dashboard-summarization-logs"
+```
 
 
 ### 2. Looker Extension Framework Setup
@@ -217,7 +244,7 @@ WEBSOCKET_SERVICE=
 
 The process above requires your local development server to be running to load the extension code. To allow other people to use the extension, a production build of the extension needs to be run. As the kitchensink uses code splitting to reduce the size of the initially loaded bundle, multiple JavaScript files are generated.
 
-1. In your extension project directory on your development machine, build the extension by running the command `yarn build`.
+1. In your extension project directory on your development machine, build the extension by running the command `npm run build`.
 2. Drag and drop ALL of the generated JavaScript files contained in the `dist` directory into the Looker project interface.
 3. Modify your `manifest.lkml` to use `file` instead of `url` and point it at the `bundle.js` file.
 

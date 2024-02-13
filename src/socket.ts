@@ -33,5 +33,6 @@ export const socket = io(URL,{
     timeout: 120000, 
     reconnection:true,
     reconnectionDelay: 1000,
-    autoConnect: false
+    autoConnect: false,
+    transports:['websocket']
 })
