@@ -67,7 +67,7 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 2. Navigate (`cd`) to the template directory on your system
 
    ```bash
-   cd websocket-service
+   cd websocket-service/src
    ```
 
 3. Install the dependencies with [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
