@@ -27,7 +27,7 @@ SOFTWARE.
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { ExtensionContext } from '@looker/extension-sdk-react'
 import { Filters } from '@looker/extension-sdk'
-import { BardLogo, LandingPage } from './components/LandingPage'
+import { GenerativeLogo, LandingPage } from './components/LandingPage'
 import { socket } from './socket'
 import MarkdownComponent from './components/MarkdownComponent'
 import useWorkspaceOauth from './hooks/useWorkspaceOauth'
@@ -59,6 +59,7 @@ export const DashboardSummarization: React.FC = () => {
   const [dashboardMetadata, setDashboardMetadata] = useState<DashboardMetadata>()
   const [loadingDashboardMetadata, setLoadingDashboardMetadata] = useState<boolean>(false)
   const [isConnected, setIsConnected] = useState(socket.connected);
+  const [refinedData,setRefinedData] = useState()
   const { data, setData, formattedData, setFormattedData, info, setInfo, message, setMessage, setDashboardURL } = useContext(SummaryDataContext)
   const [loading, setLoading] = useState(false)
   const workspaceOauth = useWorkspaceOauth()
@@ -77,15 +78,18 @@ export const DashboardSummarization: React.FC = () => {
     }
 
     function onFooEvent(value) {
-      // console.log(value.toString())
       // need this conditional to make sure that headers aren't included in the li elements generated
       setData(previous => value.substring(0,2).includes("#") ? [...previous, '\n', value] : [...previous, value]);
+    }
+
+    function onRefineEvent(value) {
+      // need this conditional to make sure that headers aren't included in the li elements generated
+      setRefinedData(value);
     }
 
     function onComplete(event:string) {
       console.log(event)
       setFormattedData(event.replace('```json','').replaceAll('```','').trim())
-      // document.querySelector('blockquote')?.querySelectorAll('p')
       setLoading(false)
     }
 
@@ -94,12 +98,14 @@ export const DashboardSummarization: React.FC = () => {
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('my broadcast event', onFooEvent);
+    socket.on('my refine event', onRefineEvent);
     socket.on('complete', onComplete)
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('my broadcast event', onFooEvent);
+      socket.off('my refine event', onRefineEvent);
       socket.off('complete', onComplete);
     };
   }, [])
@@ -218,21 +224,40 @@ export const DashboardSummarization: React.FC = () => {
         <></>
       }
       <div style={{height:'auto',display:'flex', flexDirection:'column', justifyContent:'space-evenly',marginBottom:'1.6rem'}}>
-      <div className="layout" style={{boxShadow:'0px',paddingBottom:'1.2rem',marginBottom:'2rem',height:'50%'}}>
-        <span style={{fontSize:'0.9rem',opacity:'0.8'}}>Summarize your Dashboard Queries</span>
-        <button className='button' disabled={loading || !socket.connected} onClick={() => {
+      <div className="layout" style={{boxShadow:'0px',paddingBottom:'1.2rem',height:'50%'}}>
+        <span style={{fontSize:'0.9rem',opacity:'0.8', width:'60%'}}>Summarize your Dashboard Queries</span>
+        <button className='button' style={{lineHeight:'20px', padding:'6px 16px'}} disabled={loading || !socket.connected} onClick={() => {
           setLoading(true)
           socket.emit("my event", JSON.stringify({...dashboardMetadata, instance:extensionSDK.lookerHostData?.hostOrigin?.split('https://')[1].split('.')[0]}))
-        }}>Generate <img  style={{opacity: loading ? 0.2 : 1}}src="https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/summarize_auto/default/20px.svg"/></button>
+        }}>{loading ? 'Generating' : 'Generate'} <img  style={{opacity: loading ? 0.2 : 1}}src="https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/summarize_auto/default/20px.svg"/></button>
       </div>
-      <div className="layout" style={{boxShadow:'0px',opacity: !loading ? 1 : 0.2, height:'50%'}}>
-        <span style={{fontSize:'0.9rem',opacity:'0.8', width: '60%'}}>Export your Insights</span>
-        <button disabled={loading} onClick={workspaceOauth} className='button' style={{borderRadius:'50%',padding:'0.5rem'}}>
-          <img height={20} width={20} src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Google_Chat_icon_%282020%29.svg/1024px-Google_Chat_icon_%282020%29.svg.png"/>
-        </button>
-        <button disabled={loading} onClick={slackOauth} className='button' style={{borderRadius:'50%',padding:'0.5rem'}}>
-          <img height={20} width={20} src="https://cdn.worldvectorlogo.com/logos/slack-new-logo.svg"/>
-        </button>
+      <div style={{boxShadow:'0px', position:'absolute',bottom:0, zIndex:1,backgroundColor: 'white',width: '-webkit-fill-available',
+    paddingRight: '2rem'}}>
+        <div className='layoutBottom'>
+        <span style={{fontSize:'0.9rem',opacity: !loading ? 0.8 : 0.2, width: '30%'}}>Actions</span>
+        <div style={{display:'flex',flexDirection:'row',justifyContent:'flex-end',width:'70%',opacity: !loading ? 1 : 0.2}}>
+        <div style={{display:'flex',flexDirection:'row', alignItems:'center'}}>
+          <span style={{fontSize:'0.9rem',opacity: !loading ? 0.8 : 0.2, paddingRight:'0.8rem'}}>Export</span>
+          <button disabled={loading || data.length <= 0} onClick={workspaceOauth} className='button' style={{borderRadius:'50%',padding:'0.5rem'}}>
+            <img height={20} width={20} src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Google_Chat_icon_%282020%29.svg/1024px-Google_Chat_icon_%282020%29.svg.png"/>
+          </button>
+          <button disabled={loading || data.length <= 0} onClick={slackOauth} className='button' style={{borderRadius:'50%',padding:'0.5rem',marginLeft:'2vw'}}>
+            <img height={20} width={20} src="https://cdn.worldvectorlogo.com/logos/slack-new-logo.svg"/>
+          </button>
+        </div>
+        {/* <div style={{display:'flex',flexDirection:'row', alignItems:'center',marginLeft:'1rem'}}>
+          <span><img height={20} width={20} src="https://cdn3.iconfinder.com/data/icons/feather-5/24/edit-1024.png" /></span>
+          <button disabled={loading || data.length <= 0} onClick={() => {
+            const summaryText = data.join(' ')
+            setLoading(true)
+            socket.emit("refine", JSON.stringify(summaryText))
+          }
+        } className='button' style={{borderRadius:'20%',padding:'0.5rem',marginLeft:'2vw'}}>
+            Refine
+          </button>
+        </div> */}
+        </div>
+        </div>
       </div>
       </div>
       {data.length > 0 
@@ -254,7 +279,7 @@ export const DashboardSummarization: React.FC = () => {
           padding:'0.8rem',
           marginTop: '1rem'
       }}>
-        {loading ? <BardLogo /> : <LandingPage />}
+        {loading && data.length <= 0 ? <GenerativeLogo /> : <LandingPage />}
       </div>
       }
     </div>
