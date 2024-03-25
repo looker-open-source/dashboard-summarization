@@ -50,6 +50,16 @@ resource "google_cloud_run_v2_service" "default" {
     containers {
         image = var.docker_image
 
+        env {
+          name = "PROJECT"
+          value = var.project_id
+        }
+
+        env {
+          name = "REGION"
+          value = var.deployment_region
+        }
+
         resources {
             limits = {
                 cpu = 1

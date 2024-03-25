@@ -31,7 +31,8 @@ const server = http.createServer(app);
 const { Server } = require('socket.io')
 const {VertexAI} = require('@google-cloud/vertexai');
 const { LookerNodeSDK, NodeSettingsIniFile } = require('@looker/sdk-node');
-const { IApiSettings } = require('@looker/sdk-rtl')
+const dotenv = require('dotenv');
+dotenv.config();
 
 const io = new Server(server, {
     pingInterval: 120,
@@ -49,12 +50,15 @@ app.get('/', (req, res) => {
 async function runLookerQuery(sdk,data) {
     try {
         const query = await sdk.ok(sdk.create_query(data))
-        const value = await sdk.ok(sdk.run_query({
-            query_id:query.id,
-            result_format:'csv',
-            cache:true,
+        const { model, view, fields, pivots, fill_fields, filters, sorts, limit, column_limit, total, row_total, subtotals, dynamic_fields} = query
+        const value = await sdk.ok(sdk.run_inline_query({
+            body: { model, view, fields, pivots, fill_fields, filters, sorts, limit: 200, column_limit, total, row_total, subtotals, dynamic_fields},
+            result_format: 'csv',
+            cache: true,
+            apply_formatting: true,
             limit:200
         }))
+        
         return value
     } catch(e) {
         console.log('There was an error calling Looker: ', e)
@@ -63,7 +67,8 @@ async function runLookerQuery(sdk,data) {
 
 
 // Initialize Vertex with your Cloud project and location
-const vertexAI = new VertexAI({project: 'looker-private-demo', location: 'us-central1'});
+console.log({project: process.env.PROJECT, location: process.env.REGION})
+const vertexAI = new VertexAI({project: process.env.PROJECT, location: process.env.REGION});
 // Instantiate the model
 const generativeModel = vertexAI.preview.getGenerativeModel({
     model: 'gemini-pro',
@@ -114,9 +119,9 @@ io.on('connection', async (socket) => {
             Your response for each dashboard query should always start on a new line in markdown, should not be indented and should include the following attributes starting with: 
             - \"Query Name\": is a markdown heading and should use the Query Title data from the "context." The query name itself should be on a newline and should not be indented.
             - \"Description\": should start on a newline, should not be indented and the generated description should be a paragraph starting on a newline. It should be 2-4 sentences max describing the query itself and should be as descriptive as possible.
-            - \"Summary\": should start with this image included <img src"https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/summarize_auto/default/24px.svg" height="10" width="10"/>, should not be indented and should be 2-4 sentences max summarizing the results of the query being as knowledgeable as possible with the goal to give the user as much information as needed so that they don't have to investigate the dashboard themselves and be a blockquote not including any bullet points. End with a newline,
+            - \"Summary\": should be a blockquote, should not be indented and should be 3-5 sentences max summarizing the results of the query being as knowledgeable as possible with the goal to give the user as much information as needed so that they don't have to investigate the dashboard themselves. End with a newline,
             - \"Next Steps\" section which should contain 2-3 bullet points, that are not indented, drawing conclusions from the data and recommending next steps that should be clearly actionable followed by a newline 
-            Each dashboard query summary should start on a newlin, should not be indented, and should end with a divider. Below are details on the dashboard and queries. \n
+            Each dashboard query summary should start on a newline, should not be indented, and should end with a divider. Below are details on the dashboard and queries. \n
             
             '''
             Context: ${context}
@@ -124,10 +129,7 @@ io.on('connection', async (socket) => {
             
             Additionally here is an example of a formatted response in Markdown that you should follow, please use this as an example of how to structure your response and not verbatim copy the example text into your responses. \n
             
-            ## Query Name \n
-            Web Traffic Over Time \n
-            
-            ## Description \n
+            ## Web Traffic Over Time \n
             This query details the amount of web traffic received to the website over the past 6 months. It includes a web traffic source field of organic, search and display
             as well as an amount field detailing the amount of people coming from those sources to the website. \n
             
@@ -162,7 +164,7 @@ io.on('connection', async (socket) => {
             if(item.candidates[0].content.parts[0].text !== null) {
                 const formattedString = item.candidates[0].content.parts[0].text.split('\n').map(item => item.trim()).join('\n')
                 socket.emit('my broadcast event', formattedString)
-                console.log(formattedString)
+                
             }
         }
         
@@ -223,7 +225,49 @@ io.on('connection', async (socket) => {
             )
         )                               
             
+    },
+    socket.on('refine',async (data) => {
+        const summary = JSON.parse(data)
+        const refinePromptData = `The following text represents summaries of a given dashboard's data. Make this much more concise for a slide presentation using the following format in json:\n
+        '''json {
+            title: ...,
+            key_points: [
+                ...
+            ]
+        }
+        \n Summaries: ${summary}`
+                            
+        const refinePrompt = {
+            contents: [{ role: 'user', parts: [{ text: refinePromptData}]}]
+        }
+                            
+        const formattedResp = await generativeModel.generateContentStream(refinePrompt)
+
+        // for await (const item of formattedResp.stream) {
+        //     if(item.candidates[0].content.parts[0].text !== null) {
+        //         const formattedString = item.candidates[0].content.parts[0].text.split('\n').map(item => item.trim()).join('\n')
+        //         socket.emit('my broadcast event', formattedString)
+        //     }
+        // }
+        
+        const queryResponse = await formattedResp.response
+            // log billable characters for price monitoring
+            console.log(
+                JSON.stringify(
+                    writeStructuredLog(
+                        { 
+                            input_characters: (await generativeModel.countTokens(refinePrompt)).totalBillableCharacters, 
+                            output_characters: (await generativeModel.countTokens({ contents: queryResponse.candidates[0].content })).totalBillableCharacters 
+                        }
+                    )
+                )
+            )
+        socket.emit('my refine event',queryResponse.candidates[0].content.parts[0].text)
+        socket.emit('complete',queryResponse.candidates[0].content.parts[0].text)
     })
+)
+
+  
                                 
   socket.on('connect', () => {
     console.log("Connected!")

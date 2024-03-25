@@ -100,10 +100,10 @@ This is configured to support deployment to multiple Looker instances reusing th
 
 #### Deployment
 
-1. Build Docker File and Submit to Artifact Registry
-*Skip this step if you already have a deployed image.*
+1. Build Docker File and Submit to Artifact Registry, replacing the `REGION` variable with your deployment region.
+*Skip this step if you already have a deployed image.* Please see the [official docs](https://cloud.google.com/build/docs/configuring-builds/create-basic-configuration) for creating the yaml file.
 	```bash
-	gcloud auth login && gcloud auth application-default login && gcloud builds submit --region=us-west2 --config cloudbuild.yaml
+	gcloud auth login && gcloud auth application-default login && gcloud builds submit --region=REGION --config cloudbuild.yaml
 	```
 	Save the returned docker image url.
 2. Navigate (`cd`) to the terraform directory on your system
