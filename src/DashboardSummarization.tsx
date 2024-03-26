@@ -59,7 +59,7 @@ export const DashboardSummarization: React.FC = () => {
   const [dashboardMetadata, setDashboardMetadata] = useState<DashboardMetadata>()
   const [loadingDashboardMetadata, setLoadingDashboardMetadata] = useState<boolean>(false)
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const [refinedData,setRefinedData] = useState()
+  const [refinedData,setRefinedData] = useState([])
   const { data, setData, formattedData, setFormattedData, info, setInfo, message, setMessage, setDashboardURL } = useContext(SummaryDataContext)
   const [loading, setLoading] = useState(false)
   const workspaceOauth = useWorkspaceOauth()
@@ -77,19 +77,23 @@ export const DashboardSummarization: React.FC = () => {
       setIsConnected(false);
     }
 
-    function onFooEvent(value) {
+    function onFooEvent(value:string) {
       // need this conditional to make sure that headers aren't included in the li elements generated
       setData(previous => value.substring(0,2).includes("#") ? [...previous, '\n', value] : [...previous, value]);
     }
 
-    function onRefineEvent(value) {
+    function onRefineEvent(value:string) {
       // need this conditional to make sure that headers aren't included in the li elements generated
-      setRefinedData(value);
+      setRefinedData(JSON.parse(value.replace('```json','').replaceAll('```','').trim()))
+      document.getElementById('overlay').style.zIndex = 10
+      document.getElementById('overlay').style.opacity = 1
     }
 
     function onComplete(event:string) {
       console.log(event)
-      setFormattedData(event.replace('```json','').replaceAll('```','').trim())
+      // need to include to remove any erroneous characters included at the end by the llm
+      const formattedString = event.replace('```json','').replaceAll('```','').trim()
+      !event.includes(`"key_points":`) && setFormattedData(formattedString.substring(0,formattedString.lastIndexOf('```')))
       setLoading(false)
     }
 
@@ -204,7 +208,49 @@ export const DashboardSummarization: React.FC = () => {
   },[fetchQueryMetadata])
 
   return (
-    <div style={{width:'100%', height:'95vh'}}>
+    <div style={{height:'100vh',width:'100vw'}}>
+    {refinedData.length > 0 ?
+      <div 
+      id={'overlay'}
+      onClick={() => {
+        document.getElementById('overlay').style.zIndex = -10
+        document.getElementById('overlay').style.opacity = 0
+      }
+      }
+      style={{
+        position:'absolute',
+        alignContent:'center',
+        alignItems:'center',
+        display:'flex',
+        flexDirection:'column',
+        justifyContent:'center',
+        height:'100vh',
+        width:'100vw',
+        zIndex: 10,
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        backdropFilter:'blur(10px)'
+      }}>
+        <div className="refineCard" style={{
+          justifyContent:'space-between',
+          height:'80%',
+          width:'80%',
+          flexDirection: 'column',
+          margin:'2rem',
+          opacity:1,
+          overflowY: 'scroll'
+        }}>
+          {refinedData.map((value,index) => (
+            <div key={index}>
+              <p style={{fontWeight:'bold',fontSize:'1rem'}}>{value['query_title']}</p>
+              <span style={{opacity:'0.8'}}>{value['key_points'].join('\n')}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      :
+      <></>
+      }
+    <div style={{height:'100vh',position:'relative',zIndex:1}}>
       {message ? 
         <div style={{
           position:'absolute',
@@ -217,22 +263,28 @@ export const DashboardSummarization: React.FC = () => {
           fontSize:'0.8rem',
           color: 'rgb(0,8,2,0.8)',
           alignContent:'center',
-          backgroundColor:'rgb(255, 100, 100,0.2)'
+          backgroundColor:'rgb(255, 100, 100,0.2)',
+          backdropFilter: 'blur(10px)'
         }}>{message}
         </div>
       :
         <></>
       }
-      <div style={{height:'auto',display:'flex', flexDirection:'column', justifyContent:'space-evenly',marginBottom:'1.6rem'}}>
-      <div className="layout" style={{boxShadow:'0px',paddingBottom:'1.2rem',height:'50%'}}>
-        <span style={{fontSize:'0.9rem',opacity:'0.8', width:'60%'}}>Summarize your Dashboard Queries</span>
+      <div style={{display:'flex', flexDirection:'column', justifyContent:'space-evenly',marginBottom:'1.6rem'}}>
+      {!loading && data.length <= 0 ?
+      <div className="layout" style={{boxShadow:'0px',paddingBottom:'1.2rem', paddingTop: '1.2rem',height:'50%'}}>
+        <div style={{display:'flex',flexDirection:'column'}}>
+          <span style={{fontSize:'1.2rem',opacity:'1', width:'auto'}}>Dashboard Summarization</span>
+          <span style={{fontSize:'0.9rem',opacity:'0.8', width:'60%'}}>Looker + Vertex AI</span>
+        </div>
         <button className='button' style={{lineHeight:'20px', padding:'6px 16px'}} disabled={loading || !socket.connected} onClick={() => {
           setLoading(true)
           socket.emit("my event", JSON.stringify({...dashboardMetadata, instance:extensionSDK.lookerHostData?.hostOrigin?.split('https://')[1].split('.')[0]}))
         }}>{loading ? 'Generating' : 'Generate'} <img  style={{opacity: loading ? 0.2 : 1}}src="https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/summarize_auto/default/20px.svg"/></button>
       </div>
-      <div style={{boxShadow:'0px', position:'absolute',bottom:0, zIndex:1,backgroundColor: 'white',width: '-webkit-fill-available',
-    paddingRight: '2rem'}}>
+      :<></>
+      }
+      <div style={{boxShadow:'0px', position:'absolute',bottom:'0px', height: '10vh', paddingRight:'1rem',paddingLeft:'1rem',zIndex:1,backgroundColor: 'white',width: '-webkit-fill-available',}}>
         <div className='layoutBottom'>
         <span style={{fontSize:'0.9rem',opacity: !loading ? 0.8 : 0.2, width: '30%'}}>Actions</span>
         <div style={{display:'flex',flexDirection:'row',justifyContent:'flex-end',width:'70%',opacity: !loading ? 1 : 0.2}}>
@@ -245,25 +297,27 @@ export const DashboardSummarization: React.FC = () => {
             <img height={20} width={20} src="https://cdn.worldvectorlogo.com/logos/slack-new-logo.svg"/>
           </button>
         </div>
-        {/* <div style={{display:'flex',flexDirection:'row', alignItems:'center',marginLeft:'1rem'}}>
-          <span><img height={20} width={20} src="https://cdn3.iconfinder.com/data/icons/feather-5/24/edit-1024.png" /></span>
-          <button disabled={loading || data.length <= 0} onClick={() => {
-            const summaryText = data.join(' ')
+        <div style={{display:'flex',flexDirection:'row', alignItems:'center',marginLeft:'1rem'}}>
+          <span style={{fontSize:'0.9rem',opacity: !loading ? 0.8 : 0.2, paddingRight:'0.8rem'}}>Edit</span>
+          <button 
+          disabled={loading || data.length <= 0} 
+          onClick={() => {
+            const summaryText = data.join('\n')
             setLoading(true)
             socket.emit("refine", JSON.stringify(summaryText))
           }
-        } className='button' style={{borderRadius:'20%',padding:'0.5rem',marginLeft:'2vw'}}>
+        } className='button' style={{borderRadius:'20%',padding:'0.5rem'}}>
             Refine
           </button>
-        </div> */}
+        </div>
         </div>
         </div>
       </div>
       </div>
       {data.length > 0 
       ? 
-      <div style={{height:'90%', marginBottom:'1rem'}}>
-        <div className="summary-scroll">
+      <div style={{height:'90%',width:'90%', marginBottom:'1rem',paddingLeft:'1rem'}}>
+        <div className="summary-scroll" >
         <div className='progress'></div>
           <MarkdownComponent data={data}/>
         </div>
@@ -282,6 +336,7 @@ export const DashboardSummarization: React.FC = () => {
         {loading && data.length <= 0 ? <GenerativeLogo /> : <LandingPage />}
       </div>
       }
+    </div>
     </div>
   )
 }
