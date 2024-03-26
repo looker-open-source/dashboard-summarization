@@ -33,8 +33,8 @@ body {
   line-height: 1.58;
   letter-spacing: -.003em;
   font-size: 12px;
-  padding: 2rem;
-  height: 95vh;
+  /* padding: 2rem; */
+  /* height: 95vh; */
   overflow: hidden;
 }
 
@@ -61,25 +61,26 @@ div {
 .layout {
   box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.2);
   border-radius:0.1rem;
-  width:100%;
+  width:95%;
   /* height:auto; */
   display:flex;
   flex-direction:row;
   justify-content:space-between;
   align-items:center;
   padding-bottom: 0.8rem;
+  margin-left:1rem;
 }
 
 .layoutBottom {
   box-shadow: 0 2px 2px -2px rgba(0, 0, 0, 0.1);
   border-radius:0.1rem;
   /* width:90%; */
-  height:10%;
+  height:80%;
   display:flex;
   flex-direction:row;
   justify-content:space-between;
   align-items:center;
-  padding-bottom: 0.8rem;
+  /* padding-bottom: 0.8rem; */
   padding-top: 0.2rem;
 }
 
@@ -316,20 +317,12 @@ div.markdown h3 {
 	0% {
 		opacity: 0;
 	}
-/* 
-	50% {
-		transform: translate();
-	}
-
-	100% {
-		transform: translate();
-	} */
 }
 
 .summary-scroll {
   display: flex;
   flex-direction: column;
-  height:80%;
+  height:90%;
   width:100%;
   padding: 0.8rem;
   overflow-y: scroll;
@@ -349,8 +342,11 @@ div.markdown h3 {
 
 .progress {
 	position: fixed;
-	left: 0.4rem; top: -1rem;
-	height: 100%; width: 0.8em;
+	left: 0.4rem; 
+  /* top: -1rem; */
+  bottom: 2.5rem;
+	height: 90vh; 
+  width: 0.8em;
   border: 0rem;
   border-radius: 4rem;
 	background: #f3f0f8;
@@ -361,7 +357,7 @@ div.markdown h3 {
 	animation-timeline: --page-scroll;
 }
 
-.summaryCard {
+.summaryCard, .refineCard {
   border-radius: 0.75rem;
   --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1);
   --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
@@ -372,6 +368,10 @@ div.markdown h3 {
   display: flex;
   flex-direction: row;
   justify-content: center;
+}
+
+#overlay {
+  transition: all .3s ease-in-out;
 }
 
 .summaryCard:hover {

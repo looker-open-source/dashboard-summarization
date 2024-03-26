@@ -67,7 +67,6 @@ async function runLookerQuery(sdk,data) {
 
 
 // Initialize Vertex with your Cloud project and location
-console.log({project: process.env.PROJECT, location: process.env.REGION})
 const vertexAI = new VertexAI({project: process.env.PROJECT, location: process.env.REGION});
 // Instantiate the model
 const generativeModel = vertexAI.preview.getGenerativeModel({
@@ -193,7 +192,7 @@ io.on('connection', async (socket) => {
                             
         data: ${JSON.stringify(querySummaries)}
                             
-        json object:
+        '''json
         [
             {
                 query_name: ...,
@@ -203,7 +202,18 @@ io.on('connection', async (socket) => {
                     ...,
                 ]
             },
+            ...,
+            ...,
+            {
+                query_name: ...,
+                description: ...,
+                summary: ...,
+                next_steps: [
+                    ...,
+                ]
+            }
         ]
+        '''
         `
                             
         const finalPrompt = {
@@ -228,27 +238,36 @@ io.on('connection', async (socket) => {
     },
     socket.on('refine',async (data) => {
         const summary = JSON.parse(data)
-        const refinePromptData = `The following text represents summaries of a given dashboard's data. Make this much more concise for a slide presentation using the following format in json:\n
-        '''json {
-            title: ...,
-            key_points: [
-                ...
-            ]
-        }
-        \n Summaries: ${summary}`
+        const refinePromptData = `The following text represents summaries of a given dashboard's data. \n
+        Summaries: ${summary} \n
+        Make this much more concise for a slide presentation using the following format in json. The data should contain an array with an object for each query summary
+        with the given details:  a query title, which is the title
+        for the given query summary, and key_points which is an array of key points for the concise summary. Data should be returned in each object, you will be penalized if it doesn't adhere to this format Each summary should only be included once. Do not include the same summary twice:\n
+        Data Format: \n
+        '''json 
+        [
+            {
+                query_title: ...,
+                key_points: [
+                    ...
+                ]
+            },
+            ...,
+            {
+                query_title: ...,
+                key_points: [
+                    ...
+                ]
+            }
+        ]
+        '''
+        `
                             
         const refinePrompt = {
             contents: [{ role: 'user', parts: [{ text: refinePromptData}]}]
         }
                             
         const formattedResp = await generativeModel.generateContentStream(refinePrompt)
-
-        // for await (const item of formattedResp.stream) {
-        //     if(item.candidates[0].content.parts[0].text !== null) {
-        //         const formattedString = item.candidates[0].content.parts[0].text.split('\n').map(item => item.trim()).join('\n')
-        //         socket.emit('my broadcast event', formattedString)
-        //     }
-        // }
         
         const queryResponse = await formattedResp.response
             // log billable characters for price monitoring
