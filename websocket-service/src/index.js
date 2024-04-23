@@ -69,9 +69,9 @@ async function runLookerQuery(sdk,data) {
 // Initialize Vertex with your Cloud project and location
 const vertexAI = new VertexAI({project: process.env.PROJECT, location: process.env.REGION});
 // Instantiate the model
-const generativeModel = vertexAI.preview.getGenerativeModel({
-    model: 'gemini-pro',
-    generation_config: {max_output_tokens: 2500, temperature: 0.2, candidate_count: 1}
+const generativeModel = vertexAI.getGenerativeModel({
+    model: 'gemini-1.0-pro-001',
+    generation_config: {max_output_tokens: 2500, temperature: 0.4, candidate_count: 1}
 });
 
 const writeStructuredLog = (message) => {
@@ -109,33 +109,37 @@ io.on('connection', async (socket) => {
             Query Details:  "Query Title: ${query.title} \n ${query.note_text !== '' || query.note_text !== null ? "Query Note: " + query.note_text : ''} \n Query Fields: ${query.queryBody.fields} \n Query Data: ${queryData} \n"
             `
             const queryPrompt = `
-            You are a specialized answering assistant that can summarize a Looker dashboard and the underlying data and propose operational next steps drawing conclusions from the Query Details listed above.
-            
-            You always answer with markdown formatting. You will be penalized if you do not answer with markdown when it would be possible.
-            The markdown formatting you support: headings, bold, italic, links, tables, lists, code blocks, and blockquotes.
-            You do not support images and never include images. You will be penalized if you render images. You will always format numerical values as either percentages or in dollar amounts rounded to the nearest cent. You should not indent any response.
-            
-            Your response for each dashboard query should always start on a new line in markdown, should not be indented and should include the following attributes starting with: 
-            - \"Query Name\": is a markdown heading and should use the Query Title data from the "context." The query name itself should be on a newline and should not be indented.
-            - \"Description\": should start on a newline, should not be indented and the generated description should be a paragraph starting on a newline. It should be 2-4 sentences max describing the query itself and should be as descriptive as possible.
-            - \"Summary\": should be a blockquote, should not be indented and should be 3-5 sentences max summarizing the results of the query being as knowledgeable as possible with the goal to give the user as much information as needed so that they don't have to investigate the dashboard themselves. End with a newline,
-            - \"Next Steps\" section which should contain 2-3 bullet points, that are not indented, drawing conclusions from the data and recommending next steps that should be clearly actionable followed by a newline 
-            Each dashboard query summary should start on a newline, should not be indented, and should end with a divider. Below are details on the dashboard and queries. \n
-            
-            '''
-            Context: ${context}
-            '''
-            
-            Additionally here is an example of a formatted response in Markdown that you should follow, please use this as an example of how to structure your response and not verbatim copy the example text into your responses. \n
+            You are a specialized answering assistant that can summarize a Looker dashboard and the underlying data and propose operational next steps drawing conclusions from the Query Details listed above. Follow the instructions below:
+
+            Instructions
+            ------------
+
+            - You always answer with markdown formatting
+            - The markdown formatting you support: headings, bold, italic, links, lists, code blocks, and blockquotes.
+            - You do not support images and never include images. You will be penalized if you render images. 
+            - You will always format numerical values as either percentages or in dollar amounts rounded to the nearest cent. 
+            - You should not indent any response.
+            - Each dashboard query summary should start on a newline, should not be indented, and should end with a divider. 
+            - Your summary for a given dashboard query should always start on a new line in markdown, should not be indented and should always include the following attributes starting with: 
+              - A markdown heading that should use the Query Title data from the "context." The query name itself should be on a newline and should not be indented.
+              - A description of the query that should start on a newline be a very short paragraph and should not be indented. It should be 2-3 sentences max describing the query itself and should be as descriptive as possible.
+              - A summary summarizing the result set, pointing out trends and anomalies. It should be a single blockquote, should not be indented and or contain a table or list and should be a single paragraph. It should also be 3-5 sentences max summarizing the results of the query being as knowledgeable as possible with the goal to give the user as much information as needed so that they don't have to investigate the dashboard themselves. End with a newline,
+              - A section for next steps. This should start on a new line and should contain 2-3 bullet points, that are not indented, drawing conclusions from the data and recommending next steps that should be clearly actionable followed by a newline. Recommend things like new queries to investigate, individual data points to drill into, etc.
+
+            ------------
+
+            Below here is an example of a formatted response in Markdown that you should follow. \n
+
+            Format Examples
+            ---------------
             
             ## Web Traffic Over Time \n
             This query details the amount of web traffic received to the website over the past 6 months. It includes a web traffic source field of organic, search and display
             as well as an amount field detailing the amount of people coming from those sources to the website. \n
             
-            ## Summary \n
             > It looks like search historically has been driving the most user traffic with 9875 users over the past month with peak traffic happening in december at 1000 unique users.
             Organic comes in second and display a distant 3rd. It seems that display got off to a decent start in the year, but has decreased in volume consistently into the end of the year.
-            There appears to be a large spike in organic traffic during the month of March a 23% increase from the rest of the year.
+            There appears to be a large spike in organic traffic during the month of March a 23% increase from the rest of the year.\n
             \n
             
             ## Next Steps
@@ -143,6 +147,20 @@ io.on('connection', async (socket) => {
             * Continue investing into search advertisement with common digital marketing strategies. IT would also be good to identify/breakdown this number by campaign source and see what strategies have been working well for Search.
             * Display seems to be dropping off and variable. Use only during select months and optimize for heavily trafficed areas with a good demographic for the site retention.\n
             \n
+
+            ---------------
+
+            Use this as an example of how to structure your response from a markdown standpoint. Do not verbatim copy the example text into your responses.
+            
+            Below are details/context on the dashboard and queries. Use this context to help inform your summary. Remember to keep these summaries concise, to the point and actionable. The data will be in CSV format. Take note of any pivots and the sorts on the result set when summarizing. \n
+            
+            Context
+            ----------
+            ${context}
+            
+            ----------
+            
+            Make sure to always summarize the responses and not return the entire raw query data in the response. Remember to always include the summary attributes that are listed in the instructions above.
             `
             const prompt = {
                 contents: [
@@ -223,7 +241,8 @@ io.on('connection', async (socket) => {
         const formattedResp = await generativeModel.generateContent(finalPrompt)
                         
         // log character counts for price monitoring
-        socket.emit("complete",formattedResp.response.candidates[0].content.parts[0].text)
+        const formattedRespParsed = formattedResp.response.candidates[0].content.parts[0].text.substring(formattedResp.response.candidates[0].content.parts[0].text.indexOf("[")).replace(/^`+|`+$/g, '').trim()
+        socket.emit("complete",formattedRespParsed)
         console.log(
             JSON.stringify(
                 writeStructuredLog(
@@ -239,11 +258,25 @@ io.on('connection', async (socket) => {
     socket.on('refine',async (data) => {
         const summary = JSON.parse(data)
         const refinePromptData = `The following text represents summaries of a given dashboard's data. \n
-        Summaries: ${summary} \n
-        Make this much more concise for a slide presentation using the following format in json. The data should contain an array with an object for each query summary
-        with the given details:  a query title, which is the title
-        for the given query summary, and key_points which is an array of key points for the concise summary. Data should be returned in each object, you will be penalized if it doesn't adhere to this format Each summary should only be included once. Do not include the same summary twice:\n
-        Data Format: \n
+        Summaries 
+        ----------
+        ${summary} \n
+
+        Please follow the below instructions:
+
+        Instructions
+        ------------
+        - Make this much more concise for a slide presentation using the following format in json. 
+        - The data should contain an array with an object for each query summary
+        - Include the following details:  
+            - a query title, which is the title for the given query summary
+            - key_points which is an array of key points for the concise summary. 
+        - Data should be returned in each object, you will be penalized if it doesn't adhere to this format
+        - Each summary should only be included once. Do not include the same summary twice:\n
+
+        Data Format
+        -----------
+
         '''json 
         [
             {
@@ -281,8 +314,9 @@ io.on('connection', async (socket) => {
                     )
                 )
             )
-        socket.emit('my refine event',queryResponse.candidates[0].content.parts[0].text)
-        socket.emit('complete',queryResponse.candidates[0].content.parts[0].text)
+        const queryResponseParsed = queryResponse.candidates[0].content.parts[0].text.substring(queryResponse.candidates[0].content.parts[0].text.indexOf("[")).replace(/^`+|`+$/g, '').trim()
+        socket.emit('my refine event',queryResponseParsed)
+        socket.emit('complete',queryResponseParsed)
     })
 )
 

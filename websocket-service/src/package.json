@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@google-cloud/vertexai": "^0.2.0",
+    "@google-cloud/vertexai": "^1.1.0",
     "@looker/sdk": "^23.20.1",
     "@looker/sdk-node": "^23.20.1",
     "@looker/sdk-rtl": "^21.6.1",
