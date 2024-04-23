@@ -84,16 +84,15 @@ export const DashboardSummarization: React.FC = () => {
 
     function onRefineEvent(value:string) {
       // need this conditional to make sure that headers aren't included in the li elements generated
-      setRefinedData(JSON.parse(value.replace('```json','').replaceAll('```','').trim()))
+      setRefinedData(JSON.parse(value))
       document.getElementById('overlay').style.zIndex = 10
       document.getElementById('overlay').style.opacity = 1
     }
 
     function onComplete(event:string) {
       console.log(event)
-      // need to include to remove any erroneous characters included at the end by the llm
-      const formattedString = event.replace('```json','').replaceAll('```','').trim()
-      !event.includes(`"key_points":`) && setFormattedData(formattedString.substring(0,formattedString.lastIndexOf('```')))
+      !event.includes(`"key_points":`) && setFormattedData(event)
+        // formattedString.substring(0,formattedString.lastIndexOf('```'))
       setLoading(false)
     }
 

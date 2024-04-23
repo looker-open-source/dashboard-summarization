@@ -157,6 +157,10 @@ button:-webkit-details-marker {
   display: none;
 }
 
+h2, h3 {
+  font-size: 1.2em;
+}
+
 .app {
     height: 100%;
     display: flex;
@@ -299,6 +303,14 @@ div.markdown h3 {
 	animation-range: entry-crossing 55% exit-crossing 0%;
 }
 
+.markdown {
+  margin-bottom: 10rem;
+}
+
+.customList {
+  font-size: 1em;
+}
+
 .bard {
   animation: pulse 3s infinite;
   -webkit-animation: pulse 3s infinite;
@@ -307,7 +319,7 @@ div.markdown h3 {
 
 @keyframes fadee {
 	from {
-		opacity: 0;
+		opacity: 1;
 	}
 
 	to {
@@ -315,7 +327,7 @@ div.markdown h3 {
 	}
 
 	0% {
-		opacity: 0;
+		opacity: 1;
 	}
 }
 
@@ -364,7 +376,7 @@ div.markdown h3 {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),var(--tw-ring-shadow, 0 0 #0000),var(--tw-shadow);
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-  padding: 1.5rem;
+  padding: 1rem;
   display: flex;
   flex-direction: row;
   justify-content: center;

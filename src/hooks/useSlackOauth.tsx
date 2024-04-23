@@ -146,13 +146,14 @@ const useSlackOauth = () => {
 
     // Post a message to a channel your app is in using ID and message text
     async function publishMessage(accessToken: string) {
-        console.log(slackRichTextFormatter(formattedData))
+        console.log(formattedData)
+        console.log(formattedData[0])
         try {
             // Call the chat.postMessage method using the built-in WebClient
             const details = {
                 'channel': process.env.CHANNEL_ID!,
                 'token': accessToken,
-                'blocks': JSON.stringify(slackRichTextFormatter(formattedData))
+                'blocks': JSON.stringify(slackRichTextFormatter(formattedData.trim()))
             }
             var formBody = [];
             for (var property in details) {
