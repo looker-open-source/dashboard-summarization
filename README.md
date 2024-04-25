@@ -61,7 +61,7 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 
    ```bash
    # cd ~/ Optional. your user directory is usually a good place to git clone to.
-   git clone git@github.com:looker-open-source/extension-examples.git
+   git clone git@github.com:looker-open-source/dashboard-summarization.git
    ```
 
 2. Navigate (`cd`) to the template directory on your system
@@ -94,7 +94,7 @@ This is configured to support deployment to multiple Looker instances reusing th
 4. Start the development server
 
    ```bash
-   npm start
+   npm run start
    ```
 	Your development server should be running at http://localhost:5000
 
@@ -143,11 +143,11 @@ jsonPayload.component="dashboard-summarization-logs"
 
 #### Getting Started for Local Development
 
-1. Clone or download a copy of this repository to your development machine.
+1. Clone or download a copy of this repository to your development machine (if you haven't already).
 
    ```bash
    # cd ~/ Optional. your user directory is usually a good place to git clone to.
-   git clone git@github.com:LukaFontanilla/looker-explore-assistant.git
+   git clone git@github.com:looker-open-source/dashboard-summarization.git
    ```
 
 2. Navigate (`cd`) to the root directory in the cloned repo
@@ -163,7 +163,7 @@ jsonPayload.component="dashboard-summarization-logs"
 4. Start the development server
 
    ```bash
-   npm develop
+   npm run develop
    ```
 
    Great! Your extension is now running and serving the JavaScript at https://localhost:8080/bundle.js.
@@ -185,7 +185,7 @@ jsonPayload.component="dashboard-summarization-logs"
         application: dashboard-summarization {
           label: "Dashboard Insights Powered by Vertex AI"
           # file: "bundle.js"
-          url: "http://localhost:3000/bundle.js"
+          url: "http://localhost:8080/bundle.js"
           mount_points: {
             dashboard_vis: yes
             dashboard_tile: yes
