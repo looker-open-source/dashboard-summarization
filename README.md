@@ -166,7 +166,7 @@ jsonPayload.component="dashboard-summarization-logs"
    npm run develop
    ```
 
-   Great! Your extension is now running and serving the JavaScript at https://localhost:8080/bundle.js.
+   Great! Your extension is now running and serving the JavaScript at http://localhost:8080/bundle.js.
 
 5. Now log in to Looker and create a new project.
 
