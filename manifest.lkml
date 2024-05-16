@@ -3,8 +3,7 @@ project_name: "dashboard-summarization"
 
 application: dashboard-summarization {
   label: "Dashboard Insights Powered by Vertex AI"
-  # file: "dashboard-summarization.js"
-  url: "http://localhost:3000/bundle.js"
+  url: "http://localhost:8080/bundle.js"
   mount_points: {
     dashboard_vis: yes
     dashboard_tile: yes
@@ -15,7 +14,7 @@ application: dashboard-summarization {
     use_form_submit: yes
     core_api_methods: ["me","run_inline_query","all_lookml_models","dashboard","dashboard_dashboard_elements"]
     external_api_urls: [
-   "CLOUD RUN URL","http://localhost:5000","http://localhost:3000","https://*.googleapis.com","https://slack.com/api/*","https://slack.com/*"
+   "YOUR_CLOUD_RUN_URL","http://localhost:5000","http://localhost:3000","https://*.googleapis.com","https://slack.com/api/*","https://slack.com/*"
   ]
     oauth2_urls: [
       "https://accounts.google.com/o/oauth2/v2/auth",
