@@ -61,13 +61,13 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 
    ```bash
    # cd ~/ Optional. your user directory is usually a good place to git clone to.
-   git clone git@github.com:looker-open-source/dashboard-summarization.git
+   git clone https://github.com/looker-open-source/dashboard-summarization.git
    ```
 
 2. Navigate (`cd`) to the template directory on your system
 
    ```bash
-   cd websocket-service/src
+   cd dashboard-summarization/websocket-service/src
    ```
 
 3. Install the dependencies with [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
@@ -78,20 +78,20 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 
    > You may need to update your Node version or use a [Node version manager](https://github.com/nvm-sh/nvm) to change your Node version.
 
-3. Update `looker-example.ini` to `looker.ini` and replace environment variables Admin API Credentials. **IMPORTANT** use a section header that matches the host of your Looker instance. Example below:
+4. Update `looker-example.ini` to `looker.ini` and replace environment variables Admin API Credentials. **IMPORTANT** use a section header that matches the host of your Looker instance. Example below:
 
 Ex: Looker instance -> https://mycompany.cloud.looker.com
-```
-[mycompany]
-base_url=
-client_id=
-client_secret=
-verify_ssl=true
-```
+   ```bash
+   [mycompany]
+   base_url=<Your Looker instance URL>
+   client_id=<From your looker user's api credentials>
+   client_secret=<From your looker user's api credentials>
+   verify_ssl=true
+   ```
 
 This is configured to support deployment to multiple Looker instances reusing the same backend.
 
-4. Start the development server
+5. Start the development server
 
    ```bash
    npm run start
@@ -100,19 +100,54 @@ This is configured to support deployment to multiple Looker instances reusing th
 
 #### Deployment
 
-1. Build Docker File and Submit to Artifact Registry, replacing the `REGION` variable with your deployment region.
+1. For deployment you will need to build the docker file and submit it to the [Artifact Registry](https://cloud.google.com/artifact-registry). You need to first create a repository. Update `location` to your deployment region, then run this command from root
+	```bash
+	gcloud artifacts repositories create dashboard-summarization-docker-repo  --repository-format=docker  --location=REGION
+	```
+
+2. Navigate to template directory
+	```bash
+	cd dashboard-summarization/websocket-service/src
+	```
+
+3. Update `looker-example.ini` to `looker.ini` and replace environment variables Admin API Credentials. **IMPORTANT** use a section header that matches the host of your Looker instance. Example below:
+
+Ex: Looker instance -> https://mycompany.cloud.looker.com
+   ```
+   [mycompany]
+   base_url=<Your Looker instance URL>
+   client_id=<From your looker user's api credentials>
+   client_secret=<From your looker user's api credentials>
+   verify_ssl=true
+   ```
+
+This is configured to support deployment to multiple Looker instances reusing the same backend.
+
+4. Update cloudbuild.yaml
+	```bash
+	<YOUR_REGION> = Your deployment region
+   <YOUR_PROJECT_ID> = Your GCP project ID
+	```
+
+5. Build Docker File and Submit to Artifact Registry, replacing the `REGION` variable with your deployment region.
 *Skip this step if you already have a deployed image.* Please see the [official docs](https://cloud.google.com/build/docs/configuring-builds/create-basic-configuration) for creating the yaml file.
 	```bash
 	gcloud auth login && gcloud auth application-default login && gcloud builds submit --region=REGION --config cloudbuild.yaml
 	```
-	Save the returned docker image url.
-2. Navigate (`cd`) to the terraform directory on your system
+	Save the returned docker image url. You can also get the docker image url from the Artifact Registry
+
+6. Navigate (`cd`) to the terraform directory on your system
 	```bash
 	cd .. && cd terraform
 	```
-3. Replace defaults in the `variables.tf` file for project, region, docker url and service name.
+7. Replace defaults in the `variables.tf` file for project, region, docker url and service name.
+	```bash
+	project_id=<GCP project ID>
+   deployment_region=<Your deployement region>
+   docker_image=<The docker image url from step 5>
+	```
 
-4. Deploy resources. [*Ensure Application Default Credentials for GCP for Exported in your Environment first.*](https://cloud.google.com/docs/authentication/provide-credentials-adc#google-idp)
+8. Deploy resources. [*Ensure Application Default Credentials for GCP for Exported in your Environment first.*](https://cloud.google.com/docs/authentication/provide-credentials-adc#google-idp)
 
    ```terraform
    terraform init
@@ -122,7 +157,7 @@ This is configured to support deployment to multiple Looker instances reusing th
    terraform apply
    ```
 
-5. Save Deployed Cloud Run URL Endpoint
+9. Save Deployed Cloud Run URL Endpoint
 
 #### Optional: Setup Log Sink to BQ for LLM Cost Estimation and Request Logging
 
@@ -147,20 +182,34 @@ jsonPayload.component="dashboard-summarization-logs"
 
    ```bash
    # cd ~/ Optional. your user directory is usually a good place to git clone to.
-   git clone git@github.com:looker-open-source/dashboard-summarization.git
+   git clone https://github.com/looker-open-source/dashboard-summarization.git
    ```
 
 2. Navigate (`cd`) to the root directory in the cloned repo
 
-3. Install the dependencies with [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
+3. Ensure All the Appropriate Environment Variables are set. Copy .env.example file and save as .env
+*See Export Integration Steps below for Slack and Gchat Variables. These are optional, except WEBSOCKET_SERVICE*
+```
+SLACK_CLIENT_ID=
+SLACK_CLIENT_SECRET=
+CHANNEL_ID=
+SPACE_ID=
+WEBSOCKET_SERVICE=<Required: Cloud run endpoint url>
+```
+
+4. Install the dependencies with [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
 
    ```bash
    npm install
    ```
 
    > You may need to update your Node version or use a [Node version manager](https://github.com/nvm-sh/nvm) to change your Node version.
+   > If you get errors installing dependencies, you may try
+   ```bash
+   npm install --legacy-peer-deps
+   ```
 
-4. Start the development server
+5. Start the development server
 
    ```bash
    npm run develop
@@ -168,7 +217,7 @@ jsonPayload.component="dashboard-summarization-logs"
 
    Great! Your extension is now running and serving the JavaScript at http://localhost:8080/bundle.js.
 
-5. Now log in to Looker and create a new project.
+6. Now log in to Looker and create a new project.
 
    This is found under **Develop** => **Manage LookML Projects** => **New LookML Project**.
 
@@ -213,39 +262,30 @@ jsonPayload.component="dashboard-summarization-logs"
           }
         }
 
-6. Create a `model` LookML file in your project. The name doesn't matter. The model and connection won't be used, and in the future this step may be eliminated.
+7. Create a `model` LookML file in your project. The name doesn't matter. The model and connection won't be used, and in the future this step may be eliminated.
 
    - Add a connection in this model. It can be any connection, it doesn't matter which.
    - [Configure the model you created](https://docs.looker.com/data-modeling/getting-started/create-projects#configuring_a_model) so that it has access to some connection.
 
-7. Connect your new project to Git. You can do this multiple ways:
+8. Connect your new project to Git. You can do this multiple ways:
 
    - Create a new repository on GitHub or a similar service, and follow the instructions to [connect your project to Git](https://docs.looker.com/data-modeling/getting-started/setting-up-git-connection)
    - A simpler but less powerful approach is to set up git with the "Bare" repository option which does not require connecting to an external Git Service.
 
-8. Commit your changes and deploy your them to production through the Project UI.
+9. Commit your changes and deploy your them to production through the Project UI.
 
-9. Reload the page and click the `Browse` dropdown menu. You should see your extension in the list.
+10. Reload the page and click the `Browse` dropdown menu. You should see your extension in the list.
    - The extension will load the JavaScript from the `url` provided in the `application` definition. By default, this is https://localhost:8080/bundle.js. If you change the port your server runs on in the package.json, you will need to also update it in the manifest.lkml.
 
 - Refreshing the extension page will bring in any new code changes from the extension template, although some changes will hot reload.
 
-10. Ensure All the Appropriate Environment Variables are set.
-*See Export Integration Steps below for Slack and Gchat Variables. These are optional.*
-```
-SLACK_CLIENT_ID=
-SLACK_CLIENT_SECRET=
-CHANNEL_ID=
-SPACE_ID=
-WEBSOCKET_SERVICE=
-```
 
 #### Deployment
 
 The process above requires your local development server to be running to load the extension code. To allow other people to use the extension, a production build of the extension needs to be run. As the kitchensink uses code splitting to reduce the size of the initially loaded bundle, multiple JavaScript files are generated.
 
 1. In your extension project directory on your development machine, build the extension by running the command `npm run build`.
-2. Drag and drop ALL of the generated JavaScript files contained in the `dist` directory into the Looker project interface.
+2. Drag and drop the generated JavaScript file(bundle.js) contained in the `dist` directory into the Looker project interface.
 3. Modify your `manifest.lkml` to use `file` instead of `url` and point it at the `bundle.js` file.
 
 Note that the additional JavaScript files generated during the production build process do not have to be mentioned in the manifest. These files will be loaded dynamically by the extension as and when they are needed. Note that to utilize code splitting, the Looker server must be at version 7.21 or above.
