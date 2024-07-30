@@ -81,7 +81,7 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 4. Update `looker-example.ini` to `looker.ini` and replace environment variables Admin API Credentials. **IMPORTANT** use a section header that matches the host of your Looker instance. Example below:
 
 Ex: Looker instance -> https://mycompany.cloud.looker.com
-   ```bash
+   ```
    [mycompany]
    base_url=<Your Looker instance URL>
    client_id=<From your looker user's api credentials>
@@ -124,7 +124,7 @@ Ex: Looker instance -> https://mycompany.cloud.looker.com
 This is configured to support deployment to multiple Looker instances reusing the same backend.
 
 4. Update cloudbuild.yaml
-	```bash
+	```
 	<YOUR_REGION> = Your deployment region
    <YOUR_PROJECT_ID> = Your GCP project ID
 	```
@@ -141,7 +141,7 @@ This is configured to support deployment to multiple Looker instances reusing th
 	cd .. && cd terraform
 	```
 7. Replace defaults in the `variables.tf` file for project, region, docker url and service name.
-	```bash
+	```
 	project_id=<GCP project ID>
    deployment_region=<Your deployement region>
    docker_image=<The docker image url from step 5>
