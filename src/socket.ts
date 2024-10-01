@@ -26,8 +26,10 @@ SOFTWARE.
 
 import { io } from 'socket.io-client'
 
-const URL = process.env.NODE_ENV === 'production' ? process.env.WEBSOCKET_SERVICE!
- : 'http://localhost:5000'
+// const URL = process.env.NODE_ENV === 'production' ? process.env.WEBSOCKET_SERVICE!
+//  : process.env.WEBSOCKET_SERVICE!
+
+const URL = 'https://websocket-service-1098454044038.us-central1.run.app'
 
 export const socket = io(URL,{
     timeout: 120000, 

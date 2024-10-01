@@ -1,16 +1,16 @@
 variable "project_id" {
   type = string
-  default = "YOUR_PROJECT_ID"
+  default = "easymetrics-looker-assistant"
 }
 
 variable "deployment_region" {
   type = string
-  default = "YOUR_REGION"
+  default = "us-central1"
 }
 
 variable "docker_image" {
     type = string
-    default = "YOUR_DOCKER_IMAGE_URL"
+    default = "us-central1-docker.pkg.dev/easymetrics-looker-assistant/dashboard-summarization-docker-repo/websocketserviceimage"
 }
 
 variable "cloud_run_service_name" {
