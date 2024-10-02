@@ -1,0 +1,11 @@
+.container {
+    display: flex;
+    flex-direction: row;
+  }
+  
+.container > * {
+    flex: 1;
+    flex-shrink: 1;
+    margin: 10px;
+    flex-grow: 0;
+  }

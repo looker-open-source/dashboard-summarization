@@ -74,10 +74,6 @@ export const DashboardSummarization: React.FC = () => {
   const dashboardId = urlDashboardId === 'extension.loader' ? tileDashboardId : urlDashboardId
   const dashboardFilters = Object.keys(tileDashboardFilters || {}).length === 0 ? urlDashboardFilters : tileDashboardFilters
 
-  console.log(dashboardId, filterPart, urlDashboardFilters)
-  
-  console.log('URL Params:', Array.from(urlParams.entries()))
-
   useEffect(() => {
     
     function onConnect(value) {
@@ -219,22 +215,8 @@ export const DashboardSummarization: React.FC = () => {
     })
   },[fetchQueryMetadata, dashboardId])
 
-  useEffect(() => {
-    if (dashboardMetadata) {
-      const { queries } = dashboardMetadata
-      if(queries) {
-        const queryIds = queries.map((query) => query.queryBody)
-        
-      }
-      console.log('metadata',dashboardMetadata)
-      console.log('queries',dashboardMetadata?.queries)
-    }
-  },[dashboardMetadata])
-  
-
-
   return (
-    <div style={{height:'100vh',width:'100vw'}}>
+    <div style={{height:'100vh',width:'50vw'}}>
     {refinedData.length > 0 ?
       <div 
       id={'overlay'}
