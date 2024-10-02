@@ -54,8 +54,8 @@ interface DashboardMetadata {
 }
 
 export const DashboardSummarization: React.FC = () => {
-  const { extensionSDK, tileHostData, core40SDK} = useContext(ExtensionContext)
-  const { dashboardFilters, dashboardId } = tileHostData
+  const { extensionSDK, tileHostData, core40SDK, lookerHostData} = useContext(ExtensionContext) 
+  const { dashboardFilters: tileDashboardFilters, dashboardId: tileDashboardId } = tileHostData
   const [dashboardMetadata, setDashboardMetadata] = useState<DashboardMetadata>()
   const [loadingDashboardMetadata, setLoadingDashboardMetadata] = useState<boolean>(false)
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -64,6 +64,15 @@ export const DashboardSummarization: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const workspaceOauth = useWorkspaceOauth()
   const slackOauth = useSlackOauth()
+  
+  const hostContext = lookerHostData?.route || ''
+  const urlPath = hostContext.split('?')[0].split('/') || []
+  const urlDashboardId = urlPath[urlPath.length - 1]
+  const filterPart = hostContext.split('?')[1] || ''
+  const urlParams = new URLSearchParams(filterPart)
+  const urlDashboardFilters: Filters = Object.fromEntries(urlParams.entries())
+  const dashboardId = urlDashboardId === 'extension.loader' ? tileDashboardId : urlDashboardId
+  const dashboardFilters = Object.keys(tileDashboardFilters || {}).length === 0 ? urlDashboardFilters : tileDashboardFilters
 
   useEffect(() => {
     
@@ -191,23 +200,23 @@ export const DashboardSummarization: React.FC = () => {
 
   useEffect(() => {
     async function fetchCachedMetadata() {
-      return await extensionSDK.localStorageGetItem(`${tileHostData.dashboardId}:${JSON.stringify(tileHostData.dashboardFilters)}`)
+      return await extensionSDK.localStorageGetItem(`${dashboardId}:${JSON.stringify(dashboardFilters)}`)
     }
     fetchCachedMetadata().then((cachedMetadata) => {
       if (cachedMetadata !== null) {
-       setDashboardURL(extensionSDK.lookerHostData?.hostUrl + "/embed/dashboards/" + tileHostData.dashboardId)
+       setDashboardURL(extensionSDK.lookerHostData?.hostUrl + "/embed/dashboards/" + dashboardId)
        setLoadingDashboardMetadata(false)
        setMessage("Loaded Dashboard Metadata from cache. Click 'Summarize Dashboard' to Generate report summary.")
        setDashboardMetadata(JSON.parse(cachedMetadata || '{}'))
       } else if (tileHostData.dashboardRunState !== 'UNKNOWN') {
-        setDashboardURL(extensionSDK.lookerHostData?.hostUrl + "/embed/dashboards/" + tileHostData.dashboardId)
+        setDashboardURL(extensionSDK.lookerHostData?.hostUrl + "/embed/dashboards/" + dashboardId)
         fetchQueryMetadata()
       }
     })
-  },[fetchQueryMetadata])
+  },[fetchQueryMetadata, dashboardId])
 
   return (
-    <div style={{height:'100vh',width:'100vw'}}>
+    <div style={{height:'100vh',width:'50vw'}}>
     {refinedData.length > 0 ?
       <div 
       id={'overlay'}

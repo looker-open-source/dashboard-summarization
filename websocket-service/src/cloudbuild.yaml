@@ -2,10 +2,10 @@ steps:
   # Docker Build
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t',
-           '<YOUR_REGION>-docker.pkg.dev/<YOUR_PROJECT_ID>/dashboard-summarization-docker-repo/websocketserviceimage',
+           'us-central1-docker.pkg.dev/easymetrics-looker-assistant/dashboard-summarization-docker-repo/websocketserviceimage',
            '.']
 
   # Docker Push
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push',
-           '<YOUR_REGION>-docker.pkg.dev/<YOUR_PROJECT_ID>/dashboard-summarization-docker-repo/websocketserviceimage']
+           'us-central1-docker.pkg.dev/easymetrics-looker-assistant/dashboard-summarization-docker-repo/websocketserviceimage']

@@ -85,20 +85,20 @@ function GenerativeLogo(){
 
 function LandingPage (){
   const docs = [
-    {
-      title: 'No Code Prompt Tuning',
-      model: 'Vertex AI Generative AI Studio',
-      description:
-        'No code prompt tuning of foundational model with generated Python code for engineer hand off.',
-      doc: 'https://cloud.google.com/vertex-ai/docs/generative-ai/learn/generative-ai-studio',
-    },
-    {
-      title: 'Generative Summarization',
-      model: 'gemini-pro',
-      description:
-        'Multi-modal model by Google. Used to generate summaries for each dashboard query and stream the results to the extension',
-      doc: 'https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/quickstart-multimodal',
-    },
+    // {
+    //   title: 'No Code Prompt Tuning',
+    //   model: 'Vertex AI Generative AI Studio',
+    //   description:
+    //     'No code prompt tuning of foundational model with generated Python code for engineer hand off.',
+    //   doc: 'https://cloud.google.com/vertex-ai/docs/generative-ai/learn/generative-ai-studio',
+    // },
+    // {
+    //   title: 'Generative Summarization',
+    //   model: 'gemini-pro',
+    //   description:
+    //     'Multi-modal model by Google. Used to generate summaries for each dashboard query and stream the results to the extension',
+    //   doc: 'https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/quickstart-multimodal',
+    // },
   ]
 
   return (

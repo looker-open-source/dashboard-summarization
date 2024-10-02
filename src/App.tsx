@@ -30,6 +30,8 @@ import { SummaryDataContext } from './contexts/SummaryDataContext'
 import { hot } from 'react-hot-loader/root'
 
 import { DashboardSummarization } from './DashboardSummarization'
+import { DashboardEmbed } from './DashboardEmbed'
+import './App.css' // Import the CSS file
 
 export const App = hot(() => {
   const [data, setData] = React.useState<string[]>([])
@@ -37,10 +39,14 @@ export const App = hot(() => {
   const [info, setInfo] = React.useState(true)
   const [message, setMessage] = React.useState('')
   const [dashboardURL, setDashboardURL] = React.useState<string>('')
+
   return (
     <ExtensionProvider>
       <SummaryDataContext.Provider value={{ data, setData, formattedData, setFormattedData, info, setInfo, message, setMessage, dashboardURL, setDashboardURL}}>
-        <DashboardSummarization />
+        <div className="container">
+          <DashboardSummarization />
+          <DashboardEmbed />
+        </div>
       </SummaryDataContext.Provider>
     </ExtensionProvider>
   )
