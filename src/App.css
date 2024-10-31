@@ -1,11 +1,34 @@
 .container {
-    display: flex;
-    flex-direction: row;
-  }
-  
-.container > * {
-    flex: 1;
-    flex-shrink: 1;
-    margin: 10px;
-    flex-grow: 0;
-  }
+  display: flex;
+  height: 100vh;
+  flex-direction: row;
+}
+
+.dashboard-summarization {
+  width: 50%
+}
+
+/* .content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+} */
+
+.message {
+  padding: 0.8rem;
+  font-size: 0.8rem;
+  color: rgb(0, 8, 2, 0.8);
+  align-content: center;
+  background-color: rgb(255, 100, 100, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+
+.actions {
+  box-shadow: 0px;
+  height: 10vh;
+  z-index: 1;
+  background-color: white;
+  width: 100%;
+}

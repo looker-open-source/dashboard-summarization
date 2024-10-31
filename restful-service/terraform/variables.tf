@@ -10,10 +10,10 @@ variable "deployment_region" {
 
 variable "docker_image" {
     type = string
-    default = "us-central1-docker.pkg.dev/easymetrics-looker-assistant/dashboard-summarization-docker-repo/websocketserviceimage"
+    default = "us-central1-docker.pkg.dev/easymetrics-looker-assistant/dashboard-summarization-docker-repo/restfulserviceimage"
 }
 
 variable "cloud_run_service_name" {
     type = string
-    default = "websocket-service"
+    default = "restful-service"
 }

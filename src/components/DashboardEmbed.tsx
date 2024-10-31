@@ -3,7 +3,7 @@ import { LookerDashboardOptions } from '@looker/embed-sdk/lib/types';
 import { ExtensionContext } from '@looker/extension-sdk-react'
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import styled from "styled-components"
-import { SummaryDataContext } from './contexts/SummaryDataContext';
+import { SummaryDataContext } from '../contexts/SummaryDataContext';
 
 export const EmbedContainer = styled.div`
   width: 50%;
@@ -16,10 +16,10 @@ export const EmbedContainer = styled.div`
 
 export const DashboardEmbed: React.FC<any> = () => {
   const { extensionSDK, lookerHostData } = useContext(ExtensionContext)
-  const { dashboardURL, setDashboardURL } = useContext(SummaryDataContext)
+  // const { dashboardURL, setDashboardURL } = useContext(SummaryDataContext)
 
   const [embedUrl, setEmbedUrl] = useState<string>('')
-
+  console.log('embed url:', embedUrl)
   useEffect(() => {
     if (lookerHostData?.route && lookerHostData?.hostUrl) {
       const hostContext = lookerHostData.route || ''
@@ -38,10 +38,8 @@ export const DashboardEmbed: React.FC<any> = () => {
   }, [lookerHostData])
 
   return (
-    <>
       <EmbedContainer>
         {embedUrl && <iframe src={embedUrl} frameBorder="0" />}
       </EmbedContainer>
-    </>
   )
 }
