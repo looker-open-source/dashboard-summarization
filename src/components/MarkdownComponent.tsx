@@ -28,7 +28,11 @@ import Markdown from "react-markdown";
 import React, { memo } from 'react';
 import rehypeRaw from "rehype-raw";
 
-const MarkdownComponent = ({data}) => {
+interface MarkdownComponentProps {
+    data: string[];
+}
+
+const MarkdownComponent: React.FC<MarkdownComponentProps> = ({data}) => {
     return (
         <>
         <Markdown 
@@ -66,7 +70,7 @@ const MarkdownComponent = ({data}) => {
                 }}
                 rehypePlugins={[rehypeRaw]}
                 >
-            {data.join(' ')}
+            {data.join('\n')}
         </Markdown>
         </>
     )
