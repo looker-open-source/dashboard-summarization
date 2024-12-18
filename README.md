@@ -188,7 +188,7 @@ GENAI_CLIENT_SECRET=<same secret value used to secure Cloud Run service>
    npm run develop
    ```
 
-   Great! Your extension is now running and serving the JavaScript at http://localhost:8080/bundle.js.
+   Great! Your extension is now running and serving the JavaScript at https://localhost:3000/dashboard_summarization.js.
 
 6. Now log in to Looker and create a new project.
 
@@ -207,7 +207,7 @@ GENAI_CLIENT_SECRET=<same secret value used to secure Cloud Run service>
         application: dashboard-summarization {
           label: "Dashboard Insights Powered by Vertex AI"
           # file: "dashboard_summarization.js"
-          url: "http://localhost:8080/dashboard_summarization.js"
+          url: "https://localhost:3000/dashboard_summarization.js"
           mount_points: {
             dashboard_vis: yes
             dashboard_tile: yes
@@ -249,7 +249,7 @@ GENAI_CLIENT_SECRET=<same secret value used to secure Cloud Run service>
 9. Commit your changes and deploy your them to production through the Project UI.
 
 10. Reload the page and click the `Browse` dropdown menu. You should see your extension in the list.
-   - The extension will load the JavaScript from the `url` provided in the `application` definition. By default, this is https://localhost:8080/bundle.js. If you change the port your server runs on in the package.json, you will need to also update it in the manifest.lkml.
+   - The extension will load the JavaScript from the `url` provided in the `application` definition. By default, this is https://localhost:3000/dashboard_summarization.js. If you change the port your server runs on in the package.json, you will need to also update it in the manifest.lkml.
 
 - Refreshing the extension page will bring in any new code changes from the extension template, although some changes will hot reload.
 
@@ -260,7 +260,7 @@ The process above requires your local development server to be running to load t
 
 1. In your extension project directory on your development machine, build the extension by running the command `npm run build`.
 2. Drag and drop the generated JavaScript file(bundle.js) contained in the `dist` directory into the Looker project interface.
-3. Modify your `manifest.lkml` to use `file` instead of `url` and point it at the `bundle.js` file.
+3. Modify your `manifest.lkml` to use `file` instead of `url` and point it at the `dashboard_summarization.js` file.
 4. [IMPORTANT] Create a User Attribute in Looker following this naming convention `<extension_id>_genai_client_secret`. Note any dash or :: in the extension_id name will need to be replaced with an underscore. Typically the extension id will be your lookml project name where the extension lives followed by the name of the extension ie. `dashboard-summarization`. See [the docs](https://cloud.google.com/looker/docs/extension-framework-react-and-js-code-examples#user_attributes) for more details
 
 Note that the additional JavaScript files generated during the production build process do not have to be mentioned in the manifest. These files will be loaded dynamically by the extension as and when they are needed. Note that to utilize code splitting, the Looker server must be at version 7.21 or above.

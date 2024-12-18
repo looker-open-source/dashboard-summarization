@@ -3,7 +3,7 @@ project_name: "dashboard-summarization"
 
 application: dashboard-summarization {
   label: "Dashboard Insights Powered by Vertex AI"
-  url: "http://localhost:8080/bundle.js"
+  url: "https://localhost:3000/dashboard_summarization.js"
   mount_points: {
     dashboard_vis: yes
     dashboard_tile: yes
@@ -12,7 +12,7 @@ application: dashboard-summarization {
   entitlements: {
     local_storage: yes
     use_form_submit: yes
-    core_api_methods: ["me","run_inline_query","all_lookml_models","dashboard","dashboard_dashboard_elements"]
+    core_api_methods: ["me","run_inline_query","run_query","all_lookml_models","dashboard","dashboard_dashboard_elements"]
     external_api_urls: [
    "YOUR_CLOUD_RUN_URL","http://localhost:5000","http://localhost:3000","https://*.googleapis.com","https://slack.com/api/*","https://slack.com/*"
   ]
@@ -28,7 +28,7 @@ application: dashboard-summarization {
       "https://www.googleapis.com/auth/chat.messages.create",
       "https://slack.com/oauth/v2/authorize"
     ]
-    scoped_user_attributes: []
+    scoped_user_attributes: ["genai_client_secret"]
     global_user_attributes: []
   }
 }
