@@ -2,7 +2,7 @@
 
 This is an extension or plugin for Looker that integrates LLM's hosted on Vertex AI into a streaming dashboard summarization experience powered by Websockets.
 
-![explore assistant](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzRrZ200dnB3YWg1Y3AwazVjdm44ZWx3dWZjZ2NtcGVieWZuY3VmNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kIXodRHInpIds8KPvC/giphy.gif)
+![dashboard-summary](./src/assets/dashboard-summary-new.gif)
 
 ## Description
 
@@ -19,12 +19,10 @@ Additionally, the extension provides:
 
  - Google Chat Export (*Oauth integration to export the summary to Google Chat*)
  - Slack Export (*Oauth integration to export the summary to Slack in rich text*)
+ - Custom Summary Prompts (Ability to provide specific guidance for summary generation)
+ - Summary Regeneration (Regenerate summaries with different styles or focuses)
+ - Queries run with user context
 
-Upcoming capabilities on the roadmap:
-
- - Next Steps to Visualization
- - Google Slides Integration
- - Regenerate and Refine (*regenerate summary with custom input prompt*)
 
 ### Technologies Used
 #### Frontend
@@ -40,7 +38,6 @@ Upcoming capabilities on the roadmap:
 - [Google Cloud Platform](https://cloud.google.com/)
 - [Vertex AI](https://cloud.google.com/vertex-ai)
 - [Cloud Run](https://cloud.google.com/run?hl=en)
-- [Websockets](https://socket.io)
 
 #### Export API's
 - [Slack](https://api.slack.com/authentication/oauth-v2)
@@ -49,11 +46,11 @@ Upcoming capabilities on the roadmap:
 
 ## Setup
 
-![simple-architecture](./src/assets/dashboard-summarization-architecture.png)
+![simple-architecture](./src/assets/dashboard-summary-architecture.png)
 
-### 1. Generative AI & Websocket Server
+### 1. REST API Server
 
-This section describes how to set up the web server on Cloud Run powering the Generative AI and Websocket integrations
+This section describes how to set up the API server on Cloud Run powering the Generative AI integrations.
 
 #### Getting Started for Local Development
 
@@ -67,7 +64,7 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 2. Navigate (`cd`) to the template directory on your system
 
    ```bash
-   cd dashboard-summarization/websocket-service/src
+   cd dashboard-summarization/restful-service/src
    ```
 
 3. Install the dependencies with [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
@@ -78,20 +75,7 @@ This section describes how to set up the web server on Cloud Run powering the Ge
 
    > You may need to update your Node version or use a [Node version manager](https://github.com/nvm-sh/nvm) to change your Node version.
 
-4. Update `looker-example.ini` to `looker.ini` and replace environment variables Admin API Credentials. **IMPORTANT** use a section header that matches the host of your Looker instance. Example below:
-
-Ex: Looker instance -> https://mycompany.cloud.looker.com
-   ```
-   [mycompany]
-   base_url=<Your Looker instance URL>
-   client_id=<From your looker user's api credentials>
-   client_secret=<From your looker user's api credentials>
-   verify_ssl=true
-   ```
-
-This is configured to support deployment to multiple Looker instances reusing the same backend.
-
-5. Start the development server
+4. Start the development server
 
    ```bash
    npm run start
@@ -107,47 +91,35 @@ This is configured to support deployment to multiple Looker instances reusing th
 
 2. Navigate to template directory
 	```bash
-	cd dashboard-summarization/websocket-service/src
+	cd dashboard-summarization/restful-service/src
 	```
 
-3. Update `looker-example.ini` to `looker.ini` and replace environment variables Admin API Credentials. **IMPORTANT** use a section header that matches the host of your Looker instance. Example below:
-
-Ex: Looker instance -> https://mycompany.cloud.looker.com
-   ```
-   [mycompany]
-   base_url=<Your Looker instance URL>
-   client_id=<From your looker user's api credentials>
-   client_secret=<From your looker user's api credentials>
-   verify_ssl=true
-   ```
-
-This is configured to support deployment to multiple Looker instances reusing the same backend.
-
-4. Update cloudbuild.yaml
+3. Update cloudbuild.yaml
 	```
 	<YOUR_REGION> = Your deployment region
    <YOUR_PROJECT_ID> = Your GCP project ID
 	```
 
-5. Build Docker File and Submit to Artifact Registry, replacing the `REGION` variable with your deployment region.
+4. Build Docker File and Submit to Artifact Registry, replacing the `REGION` variable with your deployment region.
 *Skip this step if you already have a deployed image.* Please see the [official docs](https://cloud.google.com/build/docs/configuring-builds/create-basic-configuration) for creating the yaml file.
 	```bash
 	gcloud auth login && gcloud auth application-default login && gcloud builds submit --region=REGION --config cloudbuild.yaml
 	```
 	Save the returned docker image url. You can also get the docker image url from the Artifact Registry
 
-6. Navigate (`cd`) to the terraform directory on your system
+5. Navigate (`cd`) to the terraform directory on your system
 	```bash
 	cd .. && cd terraform
 	```
-7. Replace defaults in the `variables.tf` file for project, region, docker url and service name.
+6. Replace defaults in the `variables.tf` file for project, region, docker url and service name.
 	```
 	project_id=<GCP project ID>
    deployment_region=<Your deployement region>
    docker_image=<The docker image url from step 5>
+   genai_client_secret_value=<secret used to secure endpoints for public service>
 	```
 
-8. Deploy resources. [*Ensure Application Default Credentials for GCP for Exported in your Environment first.*](https://cloud.google.com/docs/authentication/provide-credentials-adc#google-idp)
+7. Deploy resources. [*Ensure Application Default Credentials for GCP for Exported in your Environment first.*](https://cloud.google.com/docs/authentication/provide-credentials-adc#google-idp)
 
    ```terraform
    terraform init
@@ -157,7 +129,7 @@ This is configured to support deployment to multiple Looker instances reusing th
    terraform apply
    ```
 
-9. Save Deployed Cloud Run URL Endpoint
+8. Save Deployed Cloud Run URL Endpoint
 
 #### Optional: Setup Log Sink to BQ for LLM Cost Estimation and Request Logging
 
@@ -166,7 +138,7 @@ estimate and monitor costs. Please see [Google Cloud's docs](https://cloud.googl
 
 ```
 resource.type = "cloud_run_revision"
-resource.labels.service_name = "websocket-service"
+resource.labels.service_name = "dashboard-summarization-service"
 resource.labels.location = "us-central1"
  severity>=DEFAULT
 jsonPayload.component="dashboard-summarization-logs"
@@ -188,13 +160,14 @@ jsonPayload.component="dashboard-summarization-logs"
 2. Navigate (`cd`) to the root directory in the cloned repo
 
 3. Ensure All the Appropriate Environment Variables are set. Copy .env.example file and save as .env
-*See Export Integration Steps below for Slack and Gchat Variables. These are optional, except WEBSOCKET_SERVICE*
+*See Export Integration Steps below for Slack and Gchat Variables. These are optional, except RESTFUL_SERVICE & GENAI_CLIENT_SECRET*. To Note, the GenAI Client Secret will be used as an environment variable only in development. When you deploy the extension to production, you'll need to save it as a user attribute in Looker with a specific format. This is so that the secret is secured and not evaluated client side. More instructions on this in the `Deployment` instructions further down.
 ```
 SLACK_CLIENT_ID=
 SLACK_CLIENT_SECRET=
 CHANNEL_ID=
 SPACE_ID=
-WEBSOCKET_SERVICE=<Required: Cloud run endpoint url>
+RESTFUL_SERVICE=<Required: Cloud run endpoint url>
+GENAI_CLIENT_SECRET=<same secret value used to secure Cloud Run service>
 ```
 
 4. Install the dependencies with [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
@@ -233,8 +206,8 @@ WEBSOCKET_SERVICE=<Required: Cloud run endpoint url>
         
         application: dashboard-summarization {
           label: "Dashboard Insights Powered by Vertex AI"
-          # file: "bundle.js"
-          url: "http://localhost:8080/bundle.js"
+          # file: "dashboard_summarization.js"
+          url: "http://localhost:8080/dashboard_summarization.js"
           mount_points: {
             dashboard_vis: yes
             dashboard_tile: yes
@@ -243,7 +216,7 @@ WEBSOCKET_SERVICE=<Required: Cloud run endpoint url>
           entitlements: {
             local_storage: yes
             use_form_submit: yes
-            core_api_methods: ["run_inline_query","all_lookml_models","dashboard","dashboard_dashboard_elements"]
+            core_api_methods: ["run_inline_query","run_query","all_lookml_models","dashboard","dashboard_dashboard_elements"]
             external_api_urls: [
            "YOUR CLOUD RUN URL","http://localhost:5000","http://localhost:3000","https://*.googleapis.com","https://slack.com/api/*","https://slack.com/*"
           ]
@@ -259,6 +232,7 @@ WEBSOCKET_SERVICE=<Required: Cloud run endpoint url>
               "https://www.googleapis.com/auth/chat.messages.create",
               "https://slack.com/oauth/v2/authorize"
             ]
+            scoped_user_attributes:["genai_client_secret"]
           }
         }
 
@@ -287,6 +261,7 @@ The process above requires your local development server to be running to load t
 1. In your extension project directory on your development machine, build the extension by running the command `npm run build`.
 2. Drag and drop the generated JavaScript file(bundle.js) contained in the `dist` directory into the Looker project interface.
 3. Modify your `manifest.lkml` to use `file` instead of `url` and point it at the `bundle.js` file.
+4. [IMPORTANT] Create a User Attribute in Looker following this naming convention `<extension_id>_genai_client_secret`. Note any dash or :: in the extension_id name will need to be replaced with an underscore. Typically the extension id will be your lookml project name where the extension lives followed by the name of the extension ie. `dashboard-summarization`. See [the docs](https://cloud.google.com/looker/docs/extension-framework-react-and-js-code-examples#user_attributes) for more details
 
 Note that the additional JavaScript files generated during the production build process do not have to be mentioned in the manifest. These files will be loaded dynamically by the extension as and when they are needed. Note that to utilize code splitting, the Looker server must be at version 7.21 or above.
 
