@@ -24,6 +24,7 @@ SOFTWARE.
 
 */
 
-import { useState, createContext } from "react";
+import { createContext } from "react";
+import { SummaryDataContextType } from "../types";
 
-export const SummaryDataContext = createContext();
+export const SummaryDataContext = createContext<SummaryDataContextType | undefined>(undefined);

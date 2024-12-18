@@ -29,18 +29,39 @@ import { ExtensionProvider } from '@looker/extension-sdk-react'
 import { SummaryDataContext } from './contexts/SummaryDataContext'
 import { hot } from 'react-hot-loader/root'
 
-import { DashboardSummarization } from './DashboardSummarization'
+import { DashboardSummarization } from './components/DashboardSummarization'
+import { SummaryDataContextType } from './types'
+import './index.css' // Import the CSS file
 
 export const App = hot(() => {
   const [data, setData] = React.useState<string[]>([])
   const [formattedData, setFormattedData] = React.useState<string>('')
+  const [querySuggestions, setQuerySuggestions] = React.useState<string[]>([])
   const [info, setInfo] = React.useState(true)
   const [message, setMessage] = React.useState('')
   const [dashboardURL, setDashboardURL] = React.useState<string>('')
+
+  const contextValue: SummaryDataContextType = {
+    data,
+    setData,
+    formattedData,
+    setFormattedData,
+    querySuggestions,
+    setQuerySuggestions,
+    info,
+    setInfo,
+    message,
+    setMessage,
+    dashboardURL,
+    setDashboardURL,
+  };
+
   return (
     <ExtensionProvider>
-      <SummaryDataContext.Provider value={{ data, setData, formattedData, setFormattedData, info, setInfo, message, setMessage, dashboardURL, setDashboardURL}}>
-        <DashboardSummarization />
+      <SummaryDataContext.Provider value={contextValue}>
+        <div className="container">
+          <DashboardSummarization />
+        </div>
       </SummaryDataContext.Provider>
     </ExtensionProvider>
   )

@@ -26,11 +26,15 @@ SOFTWARE.
 
 {
   "compilerOptions": {
+    "target": "es2019",
+    "lib": ["dom", "es2019"],
     "jsx": "react",
-    "lib": ["dom", "es2015"],
-    "sourceMap": true,
+    "module": "commonjs",
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
+  "include": ["src"],
   "exclude": ["node_modules"]
 }
