@@ -76,7 +76,10 @@ app.post('/generateQuerySummary', verifyClientSecret, async (req, res) => {
     try {
         // Replace this with your Vertex AI summarization logic
         const summary = await generateQuerySummary(generativeModel, query, description, nextStepsInstructions);
-        res.json({ summary });
+        // Encode response as base64 to handle Unicode characters (like Japanese)
+        // This prevents character encoding issues when the response passes through Looker proxy
+        const base64Summary = Buffer.from(JSON.stringify({ summary })).toString('base64');
+        res.json({ summary: base64Summary });
     } catch (e) {
         console.log('There was an error processing the individual query summary: ', e);
         res.status(500).send('Internal Server Error');
@@ -87,7 +90,10 @@ app.post('/generateSummary', verifyClientSecret, async (req, res) => {
     try {
         // Generate dashboard summary
         const summary = await generateSummary(generativeModel, querySummaries, nextStepsInstructions);
-        res.json({ summary });
+        // Encode response as base64 to handle Unicode characters (like Japanese)
+        // This prevents character encoding issues when the response passes through Looker proxy
+        const base64Summary = Buffer.from(JSON.stringify({ summary })).toString('base64');
+        res.json({ summary: base64Summary });
     } catch (e) {
         console.log('There was an error processing the dashboard summary: ', e);
         res.status(500).send('Internal Server Error');
@@ -98,7 +104,10 @@ app.post('/generateQuerySuggestions', verifyClientSecret, async (req, res) => {
     try {
         // Generate query suggestions
         const suggestions = await generateQuerySuggestions(generativeModel, queryResults, querySummaries, nextStepsInstructions);
-        res.json({ suggestions }); // Correct the response key to suggestions
+        // Encode response as base64 to handle Unicode characters (like Japanese)
+        // This prevents character encoding issues when the response passes through Looker proxy
+        const base64Suggestions = Buffer.from(JSON.stringify({ suggestions })).toString('base64');
+        res.json({ suggestions: base64Suggestions });
     } catch (e) {
         console.log('There was an error processing the query suggestions: ', e);
         res.status(500).send('Internal Server Error');

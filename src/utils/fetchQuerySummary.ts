@@ -1,4 +1,5 @@
 import { DashboardMetadata } from '../types';
+import { decodeBase64String } from './base64Helper';
 
 export const fetchQuerySummary = async (
   queryResult: any,
@@ -25,7 +26,7 @@ export const fetchQuerySummary = async (
     console.log('fetchquerysummary response', response);
     if (response.ok) {
       const data = await response.body.summary;
-      return data;
+      return decodeBase64String(data);
     } else {
       console.error('Error generating query summary:', response.statusText);
       return null;

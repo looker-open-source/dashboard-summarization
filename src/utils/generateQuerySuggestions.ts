@@ -1,4 +1,5 @@
 import { look, Looker40SDK } from "@looker/sdk";
+import { decodeBase64String } from "./base64Helper";
 
 export const generateQuerySuggestions = async (
   querySummaries: any[],
@@ -28,7 +29,7 @@ export const generateQuerySuggestions = async (
       try {
         const data = await response.json();
         console.log("Suggestions: ", data)
-        setQuerySuggestions(data.suggestions);
+        setQuerySuggestions(decodeBase64String(data.suggestions));
       } catch (error) {
         // If parsing fails, assume it's Markdown
         setQuerySuggestions(response);
