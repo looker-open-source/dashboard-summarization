@@ -1,3 +1,4 @@
+import { decodeBase64String } from './base64Helper';
 
 export const generateFinalSummary = async (
     querySummaries: any[],
@@ -24,7 +25,7 @@ export const generateFinalSummary = async (
         console.log('generateFinalSummary request querySummaries and instructions', querySummaries, nextStepsInstructions);
         console.log('generateFinalSummary response', response);
         const data = await response.body;
-        setFormattedData(data.summary);
+        setFormattedData(decodeBase64String(data.summary));
       } else {
         console.error('Error generating summary:', response.statusText);
       }
