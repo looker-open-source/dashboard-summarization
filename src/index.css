@@ -509,6 +509,7 @@ div.markdown h3 {
 
 .preset-option {
   padding: 2px 5px;
+  text-align:left;
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;

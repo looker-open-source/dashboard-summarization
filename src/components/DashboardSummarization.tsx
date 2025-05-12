@@ -372,14 +372,15 @@ export const DashboardSummarization: React.FC = () => {
             <h3 className="preset-prompts-title">Select an Analysis Style</h3>
             <div className="preset-options">
               {PRESET_PROMPTS.map((preset) => (
-                <div
+                <button
                   key={preset.id}
-                  className={`preset-option ${selectedPreset === preset.id ? 'active' : ''}`}
+                  className={`button-formatting preset-option ${selectedPreset === preset.id ? 'active' : ''}`}
                   onClick={() => handlePresetSelect(preset)}
+                  disabled={queryResults.length === 0 ? true : false}
                 >
                   <div className="preset-option-title">{preset.title}</div>
                   <div className="preset-option-description">{preset.description}</div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
