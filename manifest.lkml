@@ -28,7 +28,7 @@ application: dashboard-summarization {
       "https://www.googleapis.com/auth/chat.messages.create",
       "https://slack.com/oauth/v2/authorize"
     ]
-    scoped_user_attributes: ["genai_client_secret"]
+    scoped_user_attributes: ["genai_client_secret","gcp_identity_token"]
     global_user_attributes: []
   }
 }

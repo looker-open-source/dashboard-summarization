@@ -232,7 +232,7 @@ GENAI_CLIENT_SECRET=<same secret value used to secure Cloud Run service>
               "https://www.googleapis.com/auth/chat.messages.create",
               "https://slack.com/oauth/v2/authorize"
             ]
-            scoped_user_attributes:["genai_client_secret"]
+            scoped_user_attributes:["genai_client_secret","gcp_identity_token"]
           }
         }
 
@@ -261,7 +261,7 @@ The process above requires your local development server to be running to load t
 1. In your extension project directory on your development machine, build the extension by running the command `npm run build`.
 2. Drag and drop the generated JavaScript file(bundle.js) contained in the `dist` directory into the Looker project interface.
 3. Modify your `manifest.lkml` to use `file` instead of `url` and point it at the `dashboard_summarization.js` file.
-4. [IMPORTANT] Create a User Attribute in Looker following this naming convention `<extension_id>_genai_client_secret`. Note any dash or :: in the extension_id name will need to be replaced with an underscore. Typically the extension id will be your lookml project name where the extension lives followed by the name of the extension ie. `dashboard-summarization`. See [the docs](https://cloud.google.com/looker/docs/extension-framework-react-and-js-code-examples#user_attributes) for more details
+4. [IMPORTANT] Create 2 User Attributes in Looker following this naming convention `<extension_id>_genai_client_secret` & `<extension_id>_gcp_identity_token`. Note any dash or :: in the extension_id name will need to be replaced with an underscore. Typically the extension id will be your lookml project name where the extension lives followed by the name of the extension ie. `dashboard-summarization`. See [the docs](https://cloud.google.com/looker/docs/extension-framework-react-and-js-code-examples#user_attributes) for more details
 
 Note that the additional JavaScript files generated during the production build process do not have to be mentioned in the manifest. These files will be loaded dynamically by the extension as and when they are needed. Note that to utilize code splitting, the Looker server must be at version 7.21 or above.
 

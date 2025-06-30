@@ -13,7 +13,9 @@ export const fetchQuerySummary = async (
     const response = await extensionSDK[restfulService === 'http://localhost:5000' ? 'fetchProxy' : 'serverProxy'](`${restfulService}/generateQuerySummary`, {
       method: 'POST',
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${extensionSDK.createSecretKeyTag("gcp_identity_token")}`,
+        "X-Serverless-Authorization": `${extensionSDK.createSecretKeyTag("gcp_identity_token")}`
       },
       body: JSON.stringify({
         query: queryResult,

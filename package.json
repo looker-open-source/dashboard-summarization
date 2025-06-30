@@ -9,7 +9,7 @@
     "analyze": "export ANALYZE_MODE=static && yarn build",
     "build": "export BABEL_ENV=build && webpack --config webpack.prod.js",
     "clean": "rm -rf dist",
-    "develop": "webpack serve --hot --port 3000 --config webpack.develop.js",
+    "develop": "webpack serve --hot --port 5000 --config webpack.develop.js",
     "prebuild": "yarn clean"
   },
   "dependencies": {
