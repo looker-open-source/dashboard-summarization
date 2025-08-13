@@ -24,22 +24,23 @@ SOFTWARE.
 
 */
 
-import React from 'react'
-import { ExtensionProvider } from '@looker/extension-sdk-react'
-import { SummaryDataContext } from './contexts/SummaryDataContext'
-import { hot } from 'react-hot-loader/root'
+import { ExtensionProvider } from "@looker/extension-sdk-react";
+import React from "react";
+import { hot } from "react-hot-loader/root";
+import { SummaryDataContext } from "./contexts/SummaryDataContext";
 
-import { DashboardSummarization } from './components/DashboardSummarization'
-import { SummaryDataContextType } from './types'
-import './index.css' // Import the CSS file
+import { DashboardSummarization } from "./components/DashboardSummarization";
+import { DashboardElementProvider } from "./DashboardElementContext";
+import "./index.css"; // Import the CSS file
+import { SummaryDataContextType } from "./types";
 
 export const App = hot(() => {
-  const [data, setData] = React.useState<string[]>([])
-  const [formattedData, setFormattedData] = React.useState<string>('')
-  const [querySuggestions, setQuerySuggestions] = React.useState<string[]>([])
-  const [info, setInfo] = React.useState(true)
-  const [message, setMessage] = React.useState('')
-  const [dashboardURL, setDashboardURL] = React.useState<string>('')
+  const [data, setData] = React.useState<string[]>([]);
+  const [formattedData, setFormattedData] = React.useState<string>("");
+  const [querySuggestions, setQuerySuggestions] = React.useState<string[]>([]);
+  const [info, setInfo] = React.useState(true);
+  const [message, setMessage] = React.useState("");
+  const [dashboardURL, setDashboardURL] = React.useState<string>("");
 
   const contextValue: SummaryDataContextType = {
     data,
@@ -58,11 +59,13 @@ export const App = hot(() => {
 
   return (
     <ExtensionProvider>
-      <SummaryDataContext.Provider value={contextValue}>
-        <div className="container">
-          <DashboardSummarization />
-        </div>
-      </SummaryDataContext.Provider>
+      <DashboardElementProvider>
+        <SummaryDataContext.Provider value={contextValue}>
+          <div className="container">
+            <DashboardSummarization />
+          </div>
+        </SummaryDataContext.Provider>
+      </DashboardElementProvider>
     </ExtensionProvider>
-  )
-})
+  );
+});

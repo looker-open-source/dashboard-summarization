@@ -75,12 +75,20 @@ This section describes how to set up the API server on Cloud Run powering the Ge
 
    > You may need to update your Node version or use a [Node version manager](https://github.com/nvm-sh/nvm) to change your Node version.
 
-4. Start the development server
+4. Authenticate to Google Cloud
+
+```bash
+gcloud auth login && gcloud auth application-default login
+cloud config set <project>
+```
+
+5. Start the development server
 
    ```bash
    npm run start
    ```
 	Your development server should be running at http://localhost:5000
+
 
 #### Deployment
 
