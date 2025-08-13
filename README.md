@@ -75,12 +75,20 @@ This section describes how to set up the API server on Cloud Run powering the Ge
 
    > You may need to update your Node version or use a [Node version manager](https://github.com/nvm-sh/nvm) to change your Node version.
 
-4. Start the development server
+4. Authenticate to Google Cloud
+
+```bash
+gcloud auth login && gcloud auth application-default login
+gcloud config set project <project>
+```
+
+5. Start the development server
 
    ```bash
    npm run start
    ```
 	Your development server should be running at http://localhost:5000
+
 
 #### Deployment
 
@@ -290,3 +298,74 @@ Note that the additional JavaScript files generated during the production build 
 This app uses a one shot prompt technique for fine tuning the LLM, meaning that all the metadata for the dashboard and request is contained in the prompt. To improve the accuracy, detail, and depth of the summaries and prescriptive steps returned by the LLM please pass as much context about the dashboard and the general recommendation themes in the prompt sent to the model. This can all be done through Looker as opposed to hard coded in the Cloud Run Service. Details below:
 * Add dashboard details to each dashboard the extension is added to. This is used to inform the LLM of the general context of the report (see [these docs](https://cloud.google.com/looker/docs/editing-user-defined-dashboards#editing_dashboard_details) for more detail).
 * Add notes to each tile on a dashboard. This is used to inform the LLM of the general context of each individual query on the dashboard. Use this to add small contextual notes the LLM should consider when generating the summary (see [these docs](https://cloud.google.com/looker/docs/editing-user-defined-dashboards#:~:text=Adding%20a%20tile%20note,use%20plain%20text%20or%20HTML.) for more details on adding tile notes).
+
+## Configuration Options
+
+The Dashboard Summarization extension provides several configuration options that can be accessed through the Settings dialog when editing a dashboard. These settings allow you to customize the behavior and output of the summarization process.
+
+### Accessing Configuration
+
+To access the configuration options:
+1. Enter **Edit** mode on your dashboard
+2. Click the **Settings** button on the Dashboard Summarization tile
+3. Configure your preferences in the modal dialog
+
+### Available Settings
+
+#### Default Prompt
+- **Description**: A custom prompt that guides the AI model in generating summaries
+- **Usage**: Enter specific instructions, context, or focus areas for the AI to consider when summarizing dashboard data
+- **Example**: "Focus on revenue trends and highlight any anomalies above 10% variance"
+- **Note**: This field must be filled to enable the "Run Summary On Load" option
+
+#### Run Summary On Load
+- **Description**: Automatically generates a summary when the dashboard loads
+- **Requirement**: Requires a Default Prompt to be configured
+- **Use Case**: Ideal for dashboards that need consistent, automated insights without manual intervention
+
+#### Deep Research
+- **Description**: Enables advanced analysis by examining drill-down links and related data sources
+- **Benefits**: Provides more comprehensive insights by analyzing connected data beyond the immediate dashboard view
+- **Performance**: May increase processing time due to additional data analysis
+
+#### Drill Link Patterns
+- **Description**: Custom patterns to filter and include specific drill-down links in the analysis
+- **Format**: Enter text patterns and press Enter to add them as tags
+- **Usage**: 
+  - Add patterns to include specific types of drill links like only dashboard links
+  - Remove patterns by clicking the × button on each tag
+  - Patterns help focus the AI on relevant data sources
+- **Examples**: 
+  - `*/dashboards/*` - includes links containing "dashboards"
+  - `revenue` - includes links containing "revenue"
+  - `customer` - includes links containing "customer"
+  - `2024` - includes links containing "2024"
+
+### Drill Link Examples
+
+When Deep Research is enabled, the configuration dialog shows examples of collected drill links from your dashboard:
+
+- **Matched Links**: Drill links that match your configured patterns (highlighted in blue)
+- **Unmatched Links**: Drill links that don't match your patterns (shown in gray)
+- **Link Information**: Each link displays:
+  - Label: The human-readable name of the link
+  - URL: The destination URL for the drill-down
+  - Type: The category of the link (e.g., "drill", "url", etc.)
+
+### Configuration Best Practices
+
+1. **Start with a Clear Default Prompt**: Write specific, actionable instructions for the AI
+2. **Use Drill Link Patterns Strategically**: Focus on the most relevant data sources for your analysis
+3. **Enable Deep Research for Complex Dashboards**: Use when you need comprehensive insights across related data
+4. **Test Run Summary On Load**: Ensure automatic summaries meet your quality standards before enabling
+
+### Saving and Applying Changes
+
+- Click **Save** to apply your configuration changes
+- Changes are immediately applied to the dashboard element
+- Configuration is persisted and will be used for future summarization requests
+- You can modify settings at any time by reopening the Settings dialog
+
+---
+
+## Troubleshooting

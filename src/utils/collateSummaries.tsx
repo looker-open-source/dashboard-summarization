@@ -1,25 +1,29 @@
-import { Query, DashboardMetadata, QuerySummary, LoadingStates } from '../types';
-import { fetchQuerySummary } from './fetchQuerySummary';
+import { ExtensionSDK } from "@looker/extension-sdk";
+import { DashboardMetadata, LoadingStates, QuerySummary } from "../types";
+import { fetchQuerySummary } from "./fetchQuerySummary";
 
 export const collateSummaries = async (
   queryResults: any[],
   nextStepsInstructions: string,
   restfulService: string,
-  extensionSDK: any,
+  extensionSDK: ExtensionSDK,
   dashboardMetadata: DashboardMetadata,
   setQuerySummaries: (summaries: QuerySummary[]) => void,
   setLoadingStates: React.Dispatch<React.SetStateAction<LoadingStates>>
 ): Promise<QuerySummary[]> => {
   if (!queryResults || queryResults.length === 0) {
-    console.error('No query results to collate');
+    console.error("No query results to collate");
     return [];
   }
 
   // Initialize loading states for each query
-  const initialLoadingStates: LoadingStates = queryResults.reduce((acc, _, index) => {
-    acc[`query-${index}`] = true;
-    return acc;
-  }, {} as LoadingStates);
+  const initialLoadingStates: LoadingStates = queryResults.reduce(
+    (acc, _, index) => {
+      acc[`query-${index}`] = true;
+      return acc;
+    },
+    {} as LoadingStates
+  );
   setLoadingStates(initialLoadingStates);
 
   // Create an array to store all summaries
@@ -30,9 +34,9 @@ export const collateSummaries = async (
     const summaryPromises = queryResults.map(async (queryResult, index) => {
       try {
         const querySummary = await fetchQuerySummary(
-          queryResult, 
-          restfulService, 
-          extensionSDK, 
+          queryResult,
+          restfulService,
+          extensionSDK,
           dashboardMetadata,
           nextStepsInstructions
         );
@@ -45,7 +49,7 @@ export const collateSummaries = async (
           // Update loading state for this query
           setLoadingStates((prev: LoadingStates) => ({
             ...prev,
-            [`query-${index}`]: false
+            [`query-${index}`]: false,
           }));
 
           return querySummary;
@@ -56,7 +60,7 @@ export const collateSummaries = async (
         // Update loading state even on error
         setLoadingStates((prev: LoadingStates) => ({
           ...prev,
-          [`query-${index}`]: false
+          [`query-${index}`]: false,
         }));
         return null;
       }
@@ -65,19 +69,21 @@ export const collateSummaries = async (
     // Use Promise.all instead of Promise.allSettled for older TypeScript versions
     // Filter out failed promises manually
     const results = await Promise.all(
-      summaryPromises.map(p => p.catch(error => {
-        console.error('Summary generation error:', error);
-        return null;
-      }))
+      summaryPromises.map((p) =>
+        p.catch((error) => {
+          console.error("Summary generation error:", error);
+          return null;
+        })
+      )
     );
 
-    const completedSummaries = results.filter((result): result is QuerySummary => 
-      result !== null
+    const completedSummaries = results.filter(
+      (result): result is QuerySummary => result !== null
     );
 
     return completedSummaries;
   } catch (error) {
-    console.error('Error in collateSummaries:', error);
+    console.error("Error in collateSummaries:", error);
     return allSummaries.filter(Boolean);
   }
 };

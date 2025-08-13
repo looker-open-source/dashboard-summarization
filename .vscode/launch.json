@@ -1,0 +1,36 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "npm run start",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "start"],
+            "cwd": "${workspaceFolder}/restful-service/src",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Hot Reload with Nodemon",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeExecutable": "npx",
+            "runtimeArgs": ["nodemon", "index.js"],
+            "cwd": "${workspaceFolder}/restful-service/src",
+            "console": "integratedTerminal",
+            "restart": true,
+            "env": {
+                "NODE_ENV": "development"
+            }
+        }
+    ]
+}
