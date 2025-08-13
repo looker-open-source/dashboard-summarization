@@ -150,9 +150,7 @@ function getQuerySummaryPrompt(query, description, nextStepsInstructions) {
     Summary style/specialized instructions: ${nextStepsInstructions || ""}
     Dashboard Detail: ${description || ""} \n
     Query Details:  "Query Title: ${query.title} \n ${
-    query.note_text !== "" || query.note_text !== null
-      ? "Query Note: " + query.note_text
-      : ""
+    query.note_text ? "Query Note: " + query.note_text : ""
   } \n Query Fields: ${query.queryBody.fields} \n Query Data: ${JSON.stringify(
     query.queryData
   )} \n"
