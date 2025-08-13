@@ -79,7 +79,7 @@ This section describes how to set up the API server on Cloud Run powering the Ge
 
 ```bash
 gcloud auth login && gcloud auth application-default login
-cloud config set <project>
+gcloud config set project <project>
 ```
 
 5. Start the development server
