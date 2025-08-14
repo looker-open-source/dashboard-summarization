@@ -262,7 +262,7 @@ interface ChatMessage {
 }
 
 interface ChatInputProps {
-  querySummaries: any[];
+  querySummaries: string[];
   restfulService: string;
   extensionSDK: ExtensionSDK;
   nextStepsInstructions: string;

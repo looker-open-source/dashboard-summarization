@@ -337,7 +337,8 @@ async function generateQuestions(
   
   const data = await callVertexAI(prompt);
   try {
-    return JSON.parse(data.candidates[0]?.content?.parts[0]?.text || "{}");
+    const parsed = JSON.parse(data.candidates[0]?.content?.parts[0]?.text || "{}");
+    return Array.isArray(parsed.questions) ? parsed : { questions: [] };
   } catch (e) {
     console.error("Error parsing questions:", e);
     return { questions: [] };
