@@ -42,14 +42,13 @@ import useSlackOauth from "../hooks/useSlackOauth";
 import useWorkspaceOauth from "../hooks/useWorkspaceOauth";
 import {
   DashboardMetadata,
+  LinkedDashboardSummary,
   LoadingStates,
-  QuerySummary,
   SummaryDataContextType,
 } from "../types";
 import { fetchDashboardDetails } from "../utils/fetchDashboardDetails";
 import { fetchQueryData } from "../utils/fetchQueryData";
 import { generateFinalSummary } from "../utils/generateFinalSummary";
-import { generateQuerySuggestions } from "../utils/generateQuerySuggestions";
 import { onAllQueriesComplete } from "../utils/processRenderedData";
 import { recursiveDashboardSummarization } from "../utils/recursiveDashboardSummarization";
 import ConfigDialog from "./ConfigDialog";
@@ -172,11 +171,7 @@ export const DashboardSummarization: React.FC = () => {
   const [querySummaries, setQuerySummaries] = useState<string[]>([]);
 
   const [linkedDashboardSummaries, setLinkedDashboardSummaries] = useState<
-    {
-      dashboardId: string;
-      dashboardTitle: string;
-      summaries: any[];
-    }[]
+    LinkedDashboardSummary[]
   >([]);
   const [finalSummary, setFinalSummary] = useState<string>("");
   const [queryResults, setQueryResults] = useState<
@@ -293,17 +288,6 @@ export const DashboardSummarization: React.FC = () => {
   useEffect(() => {
     fetchQueryMetadata();
   }, [fetchQueryMetadata]);
-
-  // Generate query suggestions
-  const generateSuggestions = async (querySummaries: QuerySummary[]) => {
-    await generateQuerySuggestions(
-      querySummaries,
-      restfulService,
-      extensionSDK,
-      setQuerySuggestions,
-      nextStepsInstructions
-    );
-  };
 
   const handleInitialGenerate = async () => {
     if (!nextStepsInstructions.trim()) return;
@@ -523,6 +507,8 @@ export const DashboardSummarization: React.FC = () => {
         workspaceOauth={workspaceOauth}
         slackOauth={slackOauth}
         deepResearch={deepResearch}
+        showQa={dashboard_element_config?.element_config?.showQa || false}
+        restfulService={restfulService}
       />
     );
   }

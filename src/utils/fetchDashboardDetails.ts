@@ -37,7 +37,6 @@ export const fetchDashboardDetails = async (
   extensionSDK: ExtensionSDK,
   dashboardFilters: Filters
 ): Promise<DashboardMetadata> => {
-  console.log("from function: ", dashboardId, dashboardFilters);
   const { description } = await core40SDK.ok(
     core40SDK.dashboard(dashboardId, "description")
   );
@@ -139,7 +138,6 @@ export const fetchDashboardDetails = async (
     `${dashboardId}:${JSON.stringify(dashboardFilters)}`,
     JSON.stringify({ dashboardFilters, dashboardId, queries, description })
   );
-  console.log({ dashboardFilters, dashboardId, queries, description });
   return {
     dashboardFilters,
     dashboardId,

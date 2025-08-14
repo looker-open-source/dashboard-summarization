@@ -18,6 +18,7 @@ interface IDashboardElementConfig {
   defaultPrompt: string;
   runSummaryOnLoad: boolean;
   deepResearch: boolean;
+  showQa: boolean;
   drillLinkPatterns: string[];
 }
 

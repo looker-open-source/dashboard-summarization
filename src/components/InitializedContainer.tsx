@@ -28,9 +28,15 @@ import { KeyboardArrowDown } from "@styled-icons/material";
 import React, { useCallback, useLayoutEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import useExtensionSdk from "../hooks/useExtensionSdk";
-import { DashboardMetadata, LoadingStates } from "../types";
+import {
+  DashboardMetadata,
+  LinkedDashboardSummary,
+  LoadingStates,
+} from "../types";
 import { fetchQueryData } from "../utils/fetchQueryData";
+import { generateTitle } from "../utils/generateTitle";
 import { onAllQueriesComplete } from "../utils/processRenderedData";
+import ChatInput from "./ChatInput";
 import ConfigDialog from "./ConfigDialog";
 import { Button, PromptInput } from "./DashboardSummarization";
 import MarkdownComponent from "./MarkdownComponent";
@@ -120,7 +126,6 @@ const ContentContainer = styled.div`
   border-radius: 0 0 8px 8px;
   overflow: hidden;
   min-width: 0;
-  flex: 1;
   display: flex;
   flex-direction: column;
 `;
@@ -130,7 +135,7 @@ const CollapsibleSectionContent = styled.div<{ $isCollapsed: boolean }>`
   overflow: hidden;
   transition: max-height 300ms ease-in-out;
   min-width: 0;
-  flex: 1;
+  flex: ${(props) => (props.$isCollapsed ? "0" : "1")};
   display: flex;
   flex-direction: column;
 `;
@@ -186,7 +191,6 @@ const NestedItem = styled.div<{ $isLast: boolean }>`
   border-radius: 6px;
   border: 1px solid var(--border);
   min-width: 0;
-  flex: 1;
 `;
 
 const NestedItemHeader = styled.div`
@@ -195,7 +199,6 @@ const NestedItemHeader = styled.div`
   justify-content: space-between;
   margin-bottom: 6px;
   min-width: 0;
-  flex: 1;
 `;
 
 const NestedItemTitle = styled.span`
@@ -204,35 +207,46 @@ const NestedItemTitle = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
   min-width: 0;
 `;
 
 const NestedItemContent = styled.div`
   margin-bottom: 8px;
   min-width: 0;
-  flex: 1;
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-word;
 `;
 
-const LinkedDashboardItemTitle = styled.h4`
+const LinkedDashboardItemTitle = styled.button`
   margin-bottom: 8px;
-  color: var(--primary-700);
-  font-size: 1rem;
-  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: color 200ms ease-in-out;
+
+  &:hover {
+    color: var(--primary-600);
+  }
+
+  &:active {
+    color: var(--primary-700);
+  }
 `;
 
 const DynamicOpacityItem = styled(NestedItem)<{ $opacity: number }>`
   opacity: ${(props) => props.$opacity};
   transition: opacity 0.3s ease-in-out;
   min-width: 0;
-  flex: 1;
 `;
 
 const ExportLabel = styled.span`
@@ -280,11 +294,12 @@ const LoadingIndicator = styled.div`
   }
 `;
 
-const MainContentSection = styled.div`
+const MainContentSection = styled.div<{ $isCollapsed?: boolean }>`
   display: flex;
   flex-direction: column;
-  flex: 1;
   min-width: 0;
+  margin-bottom: ${(props) => (props.$isCollapsed ? "0" : "8px")};
+  transition: margin-bottom 300ms ease-in-out;
 `;
 
 const InitializedContainer: React.FC<{
@@ -295,11 +310,7 @@ const InitializedContainer: React.FC<{
   nextStepsInstructions: string;
   setNextStepsInstructions: (nextStepsInstructions: string) => void;
   finalSummary: string;
-  linkedDashboardSummaries: {
-    dashboardId: string;
-    dashboardTitle: string;
-    summaries: string[];
-  }[];
+  linkedDashboardSummaries: LinkedDashboardSummary[];
   queryResults: Awaited<ReturnType<typeof fetchQueryData>>;
   dashboardMetadata: DashboardMetadata;
   loading: boolean;
@@ -307,6 +318,8 @@ const InitializedContainer: React.FC<{
   workspaceOauth: () => void;
   slackOauth: () => void;
   deepResearch: boolean;
+  showQa: boolean;
+  restfulService: string;
 }> = ({
   isExpanded,
   setIsExpanded,
@@ -323,6 +336,8 @@ const InitializedContainer: React.FC<{
   workspaceOauth,
   slackOauth,
   deepResearch,
+  showQa,
+  restfulService,
 }) => {
   const extensionSDK = useExtensionSdk();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -335,21 +350,36 @@ const InitializedContainer: React.FC<{
     isDashboardDeepResearchCollapsed,
     setIsDashboardDeepResearchCollapsed,
   ] = useState(false);
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
 
-  const renderComplete = useCallback(() => {
-    if (!renderedRef.current) {
-      extensionSDK.rendered();
-      renderedRef.current = true;
-    }
+  const renderComplete = useCallback(async () => {
+    extensionSDK.rendered();
   }, [extensionSDK]);
+
+  const handleTitleGeneration = useCallback(
+    async (finalSummary: string) => {
+      const title = await generateTitle(
+        finalSummary,
+        restfulService,
+        extensionSDK
+      );
+      extensionSDK.updateTitle(title);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    },
+    [restfulService, extensionSDK]
+  );
 
   useLayoutEffect(() => {
     if (querySummaries.length > 0) {
-      timeoutRef.current = setTimeout(() => {
-        try {
-          renderComplete();
-        } catch (error) {
-          console.error("Error rendering data:", error);
+      timeoutRef.current = setTimeout(async () => {
+        if (!renderedRef.current) {
+          renderedRef.current = true;
+          await handleTitleGeneration(finalSummary);
+          try {
+            renderComplete();
+          } catch (error) {
+            console.error("Error rendering data:", error);
+          }
         }
       }, RENDER_DELAY);
     }
@@ -372,12 +402,42 @@ const InitializedContainer: React.FC<{
     setIsDashboardDeepResearchCollapsed((p) => !p);
   };
 
+  const toggleChatCollapse = () => {
+    setIsChatCollapsed((p) => !p);
+  };
+
+  const handleLinkedDashboardClick = (dashboardUrl: string) => {
+    extensionSDK.openBrowserWindow(dashboardUrl);
+  };
+
   return (
     <Container>
       <Content $isBlurred={isExpanded}>
+        {/* Display QA interface if enabled and there's content */}
+        {showQa && (finalSummary || querySummaries.length > 0) && (
+          <MainContentSection $isCollapsed={isChatCollapsed}>
+            <ChatInput
+              querySummaries={querySummaries}
+              restfulService={restfulService}
+              extensionSDK={extensionSDK}
+              setFormattedData={(data) => {
+                // This will update the final summary when a new QA response is received
+                // You might want to handle this differently based on your needs
+              }}
+              nextStepsInstructions={nextStepsInstructions}
+              linkedDashboardSummaries={linkedDashboardSummaries}
+              onNewSummary={(summary) => {
+                // Handle new summary from QA
+                console.log("New QA summary received:", summary);
+              }}
+              isCollapsed={isChatCollapsed}
+              onToggleCollapse={toggleChatCollapse}
+            />
+          </MainContentSection>
+        )}
         {/* Display final summary */}
         {finalSummary && (
-          <MainContentSection>
+          <MainContentSection $isCollapsed={isDashboardDeepResearchCollapsed}>
             <CollapsibleSectionHeader
               onClick={toggleDashboardDeepResearchCollapse}
               $isClickable={true}
@@ -403,24 +463,20 @@ const InitializedContainer: React.FC<{
         )}
 
         {querySummaries.length > 0 && (
-          <MainContentSection>
+          <MainContentSection $isCollapsed={isTileInsightsCollapsed}>
             <CollapsibleSectionHeader
-              onClick={deepResearch ? toggleTileInsightsCollapse : undefined}
-              $isClickable={deepResearch}
+              onClick={toggleTileInsightsCollapse}
+              $isClickable={true}
             >
               <SectionHeaderContent>
                 <SectionHeaderTitle>Tile Insights</SectionHeaderTitle>
-                {deepResearch && (
-                  <CollapseIcon $isCollapsed={isTileInsightsCollapsed}>
-                    <KeyboardArrowDown />
-                  </CollapseIcon>
-                )}
+                <CollapseIcon $isCollapsed={isTileInsightsCollapsed}>
+                  <KeyboardArrowDown />
+                </CollapseIcon>
               </SectionHeaderContent>
             </CollapsibleSectionHeader>
 
-            <CollapsibleSectionContent
-              $isCollapsed={deepResearch ? isTileInsightsCollapsed : false}
-            >
+            <CollapsibleSectionContent $isCollapsed={isTileInsightsCollapsed}>
               <ContentContainer>
                 {querySummaries.map((summary, index) => (
                   <DynamicOpacityItem
@@ -448,7 +504,7 @@ const InitializedContainer: React.FC<{
 
         {/* Display linked dashboard summaries */}
         {linkedDashboardSummaries.length > 0 && (
-          <MainContentSection>
+          <MainContentSection $isCollapsed={isLinkedDashboardsCollapsed}>
             <CollapsibleSectionHeader
               onClick={toggleLinkedDashboardsCollapse}
               $isClickable={true}
@@ -475,7 +531,14 @@ const InitializedContainer: React.FC<{
                         dashboardIndex === linkedDashboardSummaries.length - 1
                       }
                     >
-                      <LinkedDashboardItemTitle>
+                      <LinkedDashboardItemTitle
+                        onClick={() =>
+                          handleLinkedDashboardClick(
+                            linkedDashboard.dashboardUrl
+                          )
+                        }
+                        title={`Click to open ${linkedDashboard.dashboardTitle} in new tab`}
+                      >
                         {linkedDashboard.dashboardTitle}
                       </LinkedDashboardItemTitle>
                       {linkedDashboard.summaries.map(

@@ -12,7 +12,7 @@ dotenv.config();
 const storedClientSecret = process.env.GENAI_CLIENT_SECRET;
 const PROJECT_ID = process.env.PROJECT;
 const REGION = process.env.REGION || "us-central1"; // Default region
-const MODEL_ID = process.env.MODEL_ID || "gemini-2.0-flash"; // Default model, now from env
+const MODEL_ID = process.env.MODEL_ID || "gemini-2.0-flash-lite"; // Default model, now from env
 const API_ENDPOINT = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/publishers/google/models/${MODEL_ID}:generateContent`;
 
 app.use(express.json());
@@ -96,6 +96,49 @@ app.post("/generateQuerySuggestions", verifyClientSecret, async (req, res) => {
     res.json({ suggestions });
   } catch (e) {
     console.error("Error in /generateQuerySuggestions:", e);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.post("/generateQuestions", verifyClientSecret, async (req, res) => {
+  const { querySummaries, nextStepsInstructions, linkedDashboardSummaries } =
+    req.body;
+  try {
+    const questions = await generateQuestions(
+      querySummaries,
+      nextStepsInstructions,
+      linkedDashboardSummaries
+    );
+    res.json(questions);
+  } catch (e) {
+    console.error("Error in /generateQuestions:", e);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.post("/answerQuestion", verifyClientSecret, async (req, res) => {
+  const { querySummaries, linkedDashboardSummaries, previousContext, question } = req.body;
+  try {
+    const answer = await answerQuestion(
+      querySummaries,
+      linkedDashboardSummaries,
+      previousContext,
+      question
+    );
+    res.json({ answer });
+  } catch (e) {
+    console.error("Error in /answerQuestion:", e);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.post("/generateTitle", verifyClientSecret, async (req, res) => {
+  const { text } = req.body;
+  try {
+    const title = await generateTitle(text);
+    res.json({ title });
+  } catch (e) {
+    console.error("Error in /generateTitle:", e);
     res.status(500).send("Internal Server Error");
   }
 });
@@ -240,6 +283,100 @@ async function generateSummary(
   return data.candidates[0]?.content?.parts[0]?.text || "";
 }
 
+async function generateQuestions(
+  querySummaries,
+  nextStepsInstructions,
+  linkedDashboardSummaries = []
+) {
+  const accessToken = await getAccessToken();
+  const questionsPromptData = `
+    You are a specialized analyst that generates insightful questions based on dashboard data and summaries. Your goal is to create 3 relevant questions that would help users explore and understand the data better.
+
+    Please analyze the following query summaries and generate 3 thought-provoking questions:
+    data: ${querySummaries.join("\n")}
+    
+    ${
+      linkedDashboardSummaries.length > 0
+        ? `
+    Additionally, the following linked dashboards were analyzed and their summaries are included:
+    ${linkedDashboardSummaries
+      .map(
+        (dashboard) => `
+    ## ${dashboard.dashboardTitle}
+    ${dashboard.summaries.join("\n")}
+    `
+      )
+      .join("\n")}
+    `
+        : ""
+    }
+
+    Generate exactly 3 questions that:
+    1. Help users explore patterns or trends in the data
+    2. Identify potential areas for deeper investigation
+    3. Connect insights across different data points but only if you believe they are available
+    5. VERY IMPORTANT: Are answerable by the data provided
+
+    The questions should be:
+    - Specific and actionable
+    - Based on the actual data provided
+    - Relevant to the business context
+    - Written in a clear, professional tone
+    - Include a date filter that maps to the data provided
+    - Succinct and to the point
+    `;
+
+  const prompt = {
+    contents: [{ role: "user", parts: [{ text: questionsPromptData }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+          type: "object",
+          properties: {
+            questions: {
+              type: "array",
+              items: {
+                type: "string"
+              }
+            }
+          },
+          required: [
+            "questions"
+          ],
+          propertyOrdering: [
+          "questions",
+        ],
+      },
+    }
+  };
+  const response = await fetch(API_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(prompt),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `API request failed with status ${response.status}: ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(`Vertex AI API error: ${data.error.message}`);
+  }
+  try {
+    return JSON.parse(data.candidates[0]?.content?.parts[0]?.text || "{}");
+  } catch (e) {
+    console.error("Error parsing questions:", e);
+    return { questions: [] };
+  }
+}
+
 async function generateQuerySuggestions(
   queryResults,
   querySummaries,
@@ -291,6 +428,124 @@ async function generateQuerySuggestions(
       `API request failed with status ${response.status}: ${errorText}`
     );
   }
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(`Vertex AI API error: ${data.error.message}`);
+  }
+  return data.candidates[0]?.content?.parts[0]?.text || "";
+}
+
+async function answerQuestion(
+  querySummaries,
+  linkedDashboardSummaries = [],
+  previousContext = "",
+  question = ""
+) {
+  const accessToken = await getAccessToken();
+  const answerPromptData = `
+    You are a specialized answering assistant that can answer questions based on dashboard data and summaries. 
+    Please provide a comprehensive answer to the user's question based on the available data.
+
+    User Question: ${question}
+
+    ${previousContext?.length > 0 ? `Context from previous conversation: ${previousContext}` : ""}
+
+    Available query data and summaries:
+    ${querySummaries.join("\n")}
+    
+    ${
+      linkedDashboardSummaries.length > 0
+        ? `
+    Additionally, the following linked dashboards were analyzed and their summaries are included:
+    ${linkedDashboardSummaries
+      .map(
+        (dashboard) => `
+    ## ${dashboard.dashboardTitle}
+    ${dashboard.summaries.join("\n")}
+    `
+      )
+      .join("\n")}
+    `
+        : ""
+    }
+
+    Please provide a clear, informative answer that:
+    1. Directly addresses the user's question
+    2. Is based on the actual data provided
+    3. References specific data points when relevant
+    4. Provides actionable insights when possible
+    5. Maintains a professional and helpful tone
+    6. Is concise and to the point
+
+    If the question cannot be fully answered with the available data, please acknowledge what can and cannot be determined.
+    `;
+
+  const prompt = {
+    contents: [{ role: "user", parts: [{ text: answerPromptData }] }],
+  };
+
+  const response = await fetch(API_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(prompt),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `API request failed with status ${response.status}: ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(`Vertex AI API error: ${data.error.message}`);
+  }
+  return data.candidates[0]?.content?.parts[0]?.text || "";
+}
+
+async function generateTitle(text) {
+  const accessToken = await getAccessToken();
+  const titlePromptData = `
+    You are a specialized assistant that creates concise, relevant titles for analysis reports.
+    
+    Please analyze the following text and generate a succinct, relevant title that captures the main theme or key insight:
+    
+    ${text}
+    
+    The title should be:
+    - Concise (5-10 words maximum)
+    - Relevant to the content
+    - Professional and clear
+    - Capture the main theme or key finding
+    - Avoid generic terms like "Analysis" or "Report" unless necessary
+    
+    Return only the title text, nothing else.
+    `;
+
+  const prompt = {
+    contents: [{ role: "user", parts: [{ text: titlePromptData }] }],
+  };
+
+  const response = await fetch(API_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(prompt),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `API request failed with status ${response.status}: ${errorText}`
+    );
+  }
+
   const data = await response.json();
   if (data.error) {
     throw new Error(`Vertex AI API error: ${data.error.message}`);

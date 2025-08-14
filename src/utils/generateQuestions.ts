@@ -1,11 +1,11 @@
 import { ExtensionSDK } from "@looker/extension-sdk";
 import { LinkedDashboardSummary } from "../types";
 
-export const generateQuerySuggestions = async (
+export const generateQuestions = async (
   querySummaries: any[],
   restfulService: string,
   extensionSDK: ExtensionSDK,
-  setQuerySuggestions: (suggestions: any) => void,
+  setQuestions: (questions: string[]) => void,
   nextStepsInstructions: string,
   linkedDashboardSummaries: LinkedDashboardSummary[]
 ): Promise<void> => {
@@ -13,16 +13,15 @@ export const generateQuerySuggestions = async (
     // Use the extension sdk to proxy the request to the RESTful service
     const response = await extensionSDK[
       restfulService === "http://localhost:5000" ? "fetchProxy" : "serverProxy"
-    ](`${restfulService}/generateQuerySuggestions`, {
+    ](`${restfulService}/generateQuestions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        queryResults: querySummaries,
         querySummaries,
+        nextStepsInstructions,
         linkedDashboardSummaries,
-        nextStepsInstructions: nextStepsInstructions,
         client_secret:
           restfulService === "http://localhost:5000"
             ? process.env.GENAI_CLIENT_SECRET
@@ -34,18 +33,15 @@ export const generateQuerySuggestions = async (
       console.log("Query suggestions response:", response);
 
       try {
-        // @ts-expect-error - response is a FetchProxyDataResponse
-        const data = await response.json();
-        console.log("Suggestions: ", data);
-        setQuerySuggestions(data.suggestions);
+        const { questions } = await response.body;
+        setQuestions(questions);
       } catch (error) {
-        // If parsing fails, assume it's Markdown
-        setQuerySuggestions(response);
+        console.error("Error generating questions:", error);
       }
     } else {
-      console.error("Error generating query suggestions:", response.statusText);
+      console.error("Error generating questions:", response.statusText);
     }
   } catch (error) {
-    console.error("Error generating query suggestions:", error);
+    console.error("Error generating questions:", error);
   }
 };
