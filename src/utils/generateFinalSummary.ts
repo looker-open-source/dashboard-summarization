@@ -35,8 +35,6 @@ export const generateFinalSummary = async (
     });
 
     if (response.ok) {
-      console.log("generateFinalSummary request data", summaryData);
-      console.log("generateFinalSummary response", response);
       const data = await response.body;
       setFormattedData(data.summary);
     } else {

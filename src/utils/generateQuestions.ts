@@ -30,8 +30,6 @@ export const generateQuestions = async (
     });
 
     if (response.ok) {
-      console.log("Query suggestions response:", response);
-
       try {
         const { questions } = await response.body;
         setQuestions(questions);

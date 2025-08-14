@@ -33,8 +33,6 @@ export const generateAnswer = async (
     });
 
     if (response.ok) {
-      console.log("generateAnswer request data", answerData);
-      console.log("generateAnswer response", response);
       const data = await response.body;
       if (data.answer) {
         onAnswerGenerated(data.answer);

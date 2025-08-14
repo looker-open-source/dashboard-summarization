@@ -58,7 +58,6 @@ export const fetchQueryData = async (
   queries: Query[],
   core40SDK: Looker40SDK
 ) => {
-  console.log("fetchQueryData queries", queries);
   const queryPromises = queries.map(async (query) => {
     try {
       const response = (await core40SDK.ok(
@@ -112,6 +111,5 @@ export const fetchQueryData = async (
   });
 
   const queryResults = await Promise.all(queryPromises);
-  console.log("fetchQueryData queryResults", queryResults);
   return queryResults.filter((result) => result !== null);
 };

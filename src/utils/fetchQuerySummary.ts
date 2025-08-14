@@ -8,7 +8,6 @@ export const fetchQuerySummary = async (
   dashboardMetadata: DashboardMetadata,
   nextStepsInstructions: string
 ): Promise<any> => {
-  console.log("fetchquerysummary queryResult", queryResult);
   const { query_id, drills, ...query } = queryResult;
   try {
     const response = await extensionSDK[
@@ -28,7 +27,6 @@ export const fetchQuerySummary = async (
             : extensionSDK.createSecretKeyTag("genai_client_secret"),
       }),
     });
-    console.log("fetchquerysummary response", response);
     if (response.ok) {
       const data = await response.body.summary;
       return data;

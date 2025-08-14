@@ -31,12 +31,8 @@ export const generateQuerySuggestions = async (
     });
 
     if (response.ok) {
-      console.log("Query suggestions response:", response);
-
       try {
-        // @ts-expect-error - response is a FetchProxyDataResponse
-        const data = await response.json();
-        console.log("Suggestions: ", data);
+        const data = await response.body;
         setQuerySuggestions(data.suggestions);
       } catch (error) {
         // If parsing fails, assume it's Markdown

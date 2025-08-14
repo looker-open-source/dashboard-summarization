@@ -427,8 +427,7 @@ const InitializedContainer: React.FC<{
               nextStepsInstructions={nextStepsInstructions}
               linkedDashboardSummaries={linkedDashboardSummaries}
               onNewSummary={(summary) => {
-                // Handle new summary from QA
-                console.log("New QA summary received:", summary);
+                // do nothing
               }}
               isCollapsed={isChatCollapsed}
               onToggleCollapse={toggleChatCollapse}
@@ -598,8 +597,7 @@ const InitializedContainer: React.FC<{
                     queryResults,
                     dashboardMetadata,
                     (result) => {
-                      console.log("Manual rendered data processing:", result);
-                      // You can add UI feedback here
+                      // do nothing
                     }
                   );
                 }

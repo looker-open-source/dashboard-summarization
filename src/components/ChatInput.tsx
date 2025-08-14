@@ -226,13 +226,6 @@ const QuestionText = styled.button`
   }
 `;
 
-const QuestionSeparator = styled.span`
-  color: var(--text-secondary);
-  font-size: 0.65rem;
-  padding: 0 4px;
-  user-select: none;
-`;
-
 const SkeletonContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -348,7 +341,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
         nextStepsInstructions,
         linkedDashboardSummaries
       );
-      console.log("Questions: ", questions);
     } catch (error) {
       setQuestions([]);
       console.error("Error generating questions:", error);

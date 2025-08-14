@@ -52,6 +52,32 @@ async function getAccessToken() {
   }
 }
 
+// Reusable helper function to call Vertex AI API
+async function callVertexAI(promptPayload) {
+  const accessToken = await getAccessToken();
+  const response = await fetch(API_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(promptPayload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `API request failed with status ${response.status}: ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(`Vertex AI API error: ${data.error.message}`);
+  }
+  return data;
+}
+
 // --- API Endpoint Handlers (using REST API) ---
 
 app.post("/generateQuerySummary", verifyClientSecret, async (req, res) => {
@@ -146,7 +172,6 @@ app.post("/generateTitle", verifyClientSecret, async (req, res) => {
 // --- Helper Functions (using REST API) ---
 
 async function generateQuerySummary(query, description, nextStepsInstructions) {
-  const accessToken = await getAccessToken();
   const prompt = {
     contents: [
       {
@@ -164,27 +189,7 @@ async function generateQuerySummary(query, description, nextStepsInstructions) {
     ],
   };
 
-  const response = await fetch(API_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(prompt),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text(); // Get error message
-    throw new Error(
-      `API request failed with status ${response.status}: ${errorText}`
-    );
-  }
-  const data = await response.json();
-
-  if (data.error) {
-    throw new Error(`Vertex AI API error: ${data.error.message}`);
-  }
-
+  const data = await callVertexAI(prompt);
   return data.candidates[0]?.content?.parts[0]?.text || "";
 }
 
@@ -205,7 +210,6 @@ async function generateSummary(
   nextStepsInstructions,
   linkedDashboardSummaries = []
 ) {
-  const accessToken = await getAccessToken();
   const finalPromptData = `
     You are a specialized answering assistant that can summarize a Looker dashboard and the underlying data and propose operational next steps drawing conclusions from the Query Details listed above. Follow the instructions below:
 
@@ -260,26 +264,8 @@ async function generateSummary(
   const prompt = {
     contents: [{ role: "user", parts: [{ text: finalPromptData }] }],
   };
-  const response = await fetch(API_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(prompt),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `API request failed with status ${response.status}: ${errorText}`
-    );
-  }
-
-  const data = await response.json();
-  if (data.error) {
-    throw new Error(`Vertex AI API error: ${data.error.message}`);
-  }
+  
+  const data = await callVertexAI(prompt);
   return data.candidates[0]?.content?.parts[0]?.text || "";
 }
 
@@ -288,7 +274,6 @@ async function generateQuestions(
   nextStepsInstructions,
   linkedDashboardSummaries = []
 ) {
-  const accessToken = await getAccessToken();
   const questionsPromptData = `
     You are a specialized analyst that generates insightful questions based on dashboard data and summaries. Your goal is to create 3 relevant questions that would help users explore and understand the data better.
 
@@ -349,26 +334,8 @@ async function generateQuestions(
       },
     }
   };
-  const response = await fetch(API_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(prompt),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `API request failed with status ${response.status}: ${errorText}`
-    );
-  }
-
-  const data = await response.json();
-  if (data.error) {
-    throw new Error(`Vertex AI API error: ${data.error.message}`);
-  }
+  
+  const data = await callVertexAI(prompt);
   try {
     return JSON.parse(data.candidates[0]?.content?.parts[0]?.text || "{}");
   } catch (e) {
@@ -382,7 +349,6 @@ async function generateQuerySuggestions(
   querySummaries,
   nextStepsInstructions
 ) {
-  const accessToken = await getAccessToken();
   const querySuggestionsPromptData = `
     You are an analyst that will generate potential next-step investigation queries in json format.
     Please provide suggestions of queries or data exploration that could be done to further investigate the data. \n
@@ -413,25 +379,8 @@ async function generateQuerySuggestions(
   const prompt = {
     contents: [{ role: "user", parts: [{ text: querySuggestionsPromptData }] }],
   };
-  const response = await fetch(API_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(prompt),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `API request failed with status ${response.status}: ${errorText}`
-    );
-  }
-  const data = await response.json();
-  if (data.error) {
-    throw new Error(`Vertex AI API error: ${data.error.message}`);
-  }
+  
+  const data = await callVertexAI(prompt);
   return data.candidates[0]?.content?.parts[0]?.text || "";
 }
 
@@ -441,7 +390,6 @@ async function answerQuestion(
   previousContext = "",
   question = ""
 ) {
-  const accessToken = await getAccessToken();
   const answerPromptData = `
     You are a specialized answering assistant that can answer questions based on dashboard data and summaries. 
     Please provide a comprehensive answer to the user's question based on the available data.
@@ -484,31 +432,11 @@ async function answerQuestion(
     contents: [{ role: "user", parts: [{ text: answerPromptData }] }],
   };
 
-  const response = await fetch(API_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(prompt),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `API request failed with status ${response.status}: ${errorText}`
-    );
-  }
-
-  const data = await response.json();
-  if (data.error) {
-    throw new Error(`Vertex AI API error: ${data.error.message}`);
-  }
+  const data = await callVertexAI(prompt);
   return data.candidates[0]?.content?.parts[0]?.text || "";
 }
 
 async function generateTitle(text) {
-  const accessToken = await getAccessToken();
   const titlePromptData = `
     You are a specialized assistant that creates concise, relevant titles for analysis reports.
     
@@ -530,26 +458,7 @@ async function generateTitle(text) {
     contents: [{ role: "user", parts: [{ text: titlePromptData }] }],
   };
 
-  const response = await fetch(API_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(prompt),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `API request failed with status ${response.status}: ${errorText}`
-    );
-  }
-
-  const data = await response.json();
-  if (data.error) {
-    throw new Error(`Vertex AI API error: ${data.error.message}`);
-  }
+  const data = await callVertexAI(prompt);
   return data.candidates[0]?.content?.parts[0]?.text || "";
 }
 

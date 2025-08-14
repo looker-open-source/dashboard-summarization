@@ -327,7 +327,7 @@ export const DashboardSummarization: React.FC = () => {
 
       // Process rendered data after all queries are complete
       await onAllQueriesComplete(queryResults, dashboardMetadata, (result) => {
-        console.log("Rendered data processing complete:", result);
+        // do nothing
       });
 
       setHasInitialized(true);
