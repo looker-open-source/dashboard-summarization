@@ -300,7 +300,7 @@ async function generateQuestions(
     1. Help users explore patterns or trends in the data
     2. Identify potential areas for deeper investigation
     3. Connect insights across different data points but only if you believe they are available
-    5. VERY IMPORTANT: Are answerable by the data provided
+    4. VERY IMPORTANT: Are answerable by the data provided
 
     The questions should be:
     - Specific and actionable
