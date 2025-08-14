@@ -420,15 +420,8 @@ const InitializedContainer: React.FC<{
               querySummaries={querySummaries}
               restfulService={restfulService}
               extensionSDK={extensionSDK}
-              setFormattedData={(data) => {
-                // This will update the final summary when a new QA response is received
-                // You might want to handle this differently based on your needs
-              }}
               nextStepsInstructions={nextStepsInstructions}
               linkedDashboardSummaries={linkedDashboardSummaries}
-              onNewSummary={(summary) => {
-                // do nothing
-              }}
               isCollapsed={isChatCollapsed}
               onToggleCollapse={toggleChatCollapse}
             />

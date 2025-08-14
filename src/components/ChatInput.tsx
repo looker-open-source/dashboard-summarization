@@ -265,10 +265,8 @@ interface ChatInputProps {
   querySummaries: any[];
   restfulService: string;
   extensionSDK: ExtensionSDK;
-  setFormattedData: (data: any) => void;
   nextStepsInstructions: string;
   linkedDashboardSummaries?: LinkedDashboardSummary[];
-  onNewSummary?: (summary: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
@@ -277,10 +275,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
   querySummaries,
   restfulService,
   extensionSDK,
-  setFormattedData,
   nextStepsInstructions,
   linkedDashboardSummaries,
-  onNewSummary,
   isCollapsed = false,
   onToggleCollapse,
 }) => {
@@ -390,14 +386,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
         (answer: string) => {
           // Add the AI response to messages
           addMessage(answer, false);
-
-          // Update the formatted data (this will update the main summary)
-          setFormattedData(answer);
-
-          // Notify parent component if callback provided
-          if (onNewSummary) {
-            onNewSummary(answer);
-          }
         },
         question,
         linkedDashboardSummaries,
