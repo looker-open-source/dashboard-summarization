@@ -12,11 +12,6 @@ export const processRenderedData = (
   queryResults: any[],
   dashboardMetadata: any
 ): RenderedDataResult => {
-  console.log(
-    "Processing rendered data for dashboard:",
-    dashboardMetadata.dashboardId
-  );
-
   const processedData: any[] = [];
   const insights: string[] = [];
 

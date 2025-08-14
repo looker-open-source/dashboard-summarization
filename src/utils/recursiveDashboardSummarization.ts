@@ -1,7 +1,12 @@
 import { ExtensionSDK } from "@looker/extension-sdk";
 import { Looker40SDK } from "@looker/extension-sdk/node_modules/@looker/sdk/lib/4.0/methods";
 import React from "react";
-import { DashboardMetadata, LoadingStates, QuerySummary } from "../types";
+import {
+  DashboardMetadata,
+  LinkedDashboardSummary,
+  LoadingStates,
+  QuerySummary,
+} from "../types";
 import { collateSummaries } from "./collateSummaries";
 import { fetchDashboardDetails } from "./fetchDashboardDetails";
 import { fetchQueryData, IQueryLink } from "./fetchQueryData";
@@ -9,11 +14,7 @@ import filterLinks from "./filterLinks";
 
 interface RecursiveSummaryResult {
   originalSummaries: QuerySummary[];
-  linkedDashboardSummaries: {
-    dashboardId: string;
-    dashboardTitle: string;
-    summaries: QuerySummary[];
-  }[];
+  linkedDashboardSummaries: LinkedDashboardSummary[];
 }
 
 export const extractDashboardLinks = (
@@ -77,9 +78,8 @@ export const processLinkedDashboards = async (
   restfulService: string,
   nextStepsInstructions: string,
   setLoadingStates: React.Dispatch<React.SetStateAction<any>>
-): Promise<RecursiveSummaryResult["linkedDashboardSummaries"]> => {
-  const linkedDashboardSummaries: RecursiveSummaryResult["linkedDashboardSummaries"] =
-    [];
+): Promise<LinkedDashboardSummary[]> => {
+  const linkedDashboardSummaries: LinkedDashboardSummary[] = [];
 
   for (const link of dashboardLinks) {
     const { dashboardId, filters } = extractDashboardInfoFromUrl(link.url);
@@ -128,7 +128,10 @@ export const processLinkedDashboards = async (
       linkedDashboardSummaries.push({
         dashboardId,
         dashboardTitle: link.label || `Dashboard ${dashboardId}`,
-        summaries,
+        summaries: summaries.map((summary: QuerySummary | string) =>
+          typeof summary === "string" ? summary : summary.summary
+        ),
+        dashboardUrl: link.url,
       });
     } catch (error) {
       console.error(`Error processing linked dashboard ${dashboardId}:`, error);
@@ -170,8 +173,7 @@ export const recursiveDashboardSummarization = async (
     : [];
 
   // Process linked dashboards (one layer deep)
-  let linkedDashboardSummaries: RecursiveSummaryResult["linkedDashboardSummaries"] =
-    [];
+  let linkedDashboardSummaries: LinkedDashboardSummary[] = [];
   if (dashboardLinks.length > 0) {
     linkedDashboardSummaries = await processLinkedDashboards(
       dashboardLinks,

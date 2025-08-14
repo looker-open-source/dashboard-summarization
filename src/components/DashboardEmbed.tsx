@@ -18,8 +18,6 @@ export const DashboardEmbed: React.FC<any> = () => {
   const [embedUrl, setEmbedUrl] = useState<string>("");
   const [embedError, setEmbedError] = useState<string>("");
 
-  console.log("embed url:", embedUrl);
-
   useEffect(() => {
     if (lookerHostData?.route && lookerHostData?.hostUrl) {
       try {
@@ -38,7 +36,6 @@ export const DashboardEmbed: React.FC<any> = () => {
           lookerHostData.hostUrl
         }/embed/dashboards/${dashboardId}?${urlParams.toString()}`;
 
-        console.log("Constructed Embed URL:", newEmbedUrl);
         setEmbedUrl(newEmbedUrl);
         setEmbedError("");
       } catch (error) {

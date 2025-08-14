@@ -391,6 +391,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   const [deepResearch, setDeepResearch] = useState(
     element_config?.deepResearch || false
   );
+  const [showQa, setShowQa] = useState(element_config?.showQa || false);
   const [drillLinkPatterns, setDrillLinkPatterns] = useState<string[]>(
     element_config?.drillLinkPatterns || []
   );
@@ -426,6 +427,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
       | "defaultPrompt"
       | "runSummaryOnLoad"
       | "deepResearch"
+      | "showQa"
       | "drillLinkPatterns"
   ) => {
     switch (name) {
@@ -437,6 +439,9 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
         break;
       case "deepResearch":
         setDeepResearch(element_config?.deepResearch || false);
+        break;
+      case "showQa":
+        setShowQa(element_config?.showQa || false);
         break;
       case "drillLinkPatterns":
         setDrillLinkPatterns(element_config?.drillLinkPatterns || []);
@@ -450,6 +455,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     resetValue("defaultPrompt");
     resetValue("runSummaryOnLoad");
     resetValue("deepResearch");
+    resetValue("showQa");
     resetValue("drillLinkPatterns");
     setTagInputValue("");
   };
@@ -458,6 +464,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     resetValue("defaultPrompt");
     resetValue("runSummaryOnLoad");
     resetValue("deepResearch");
+    resetValue("showQa");
     resetValue("drillLinkPatterns");
     setTagInputValue("");
     setIsOpen(false);
@@ -469,6 +476,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
         defaultPrompt: defaultPrompt,
         runSummaryOnLoad: runSummaryOnLoad,
         deepResearch: deepResearch,
+        showQa: showQa,
         drillLinkPatterns: drillLinkPatterns,
       });
       handleClose();
@@ -538,6 +546,16 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
           </FormGroup>
 
           <FormGroup>
+            <CheckboxContainer>
+              <Checkbox
+                id="show-qa"
+                type="checkbox"
+                checked={showQa}
+                onChange={(e) => setShowQa(e.target.checked)}
+              />
+              <CheckboxLabel htmlFor="show-qa">Show QA Interface</CheckboxLabel>
+            </CheckboxContainer>
+
             <CheckboxContainer>
               <Checkbox
                 id="deep-research"
