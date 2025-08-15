@@ -1,0 +1,121 @@
+name: Release Dashboard Summarization
+
+on:
+  release:
+    types: [created]
+
+env:
+  REGION: us-central1
+  SERVICE_NAME: dashboard-summarization-api
+  APP_NAME: dashboard-summarization
+  BUCKET_NAME: ${{ secrets.GCP_BUCKET_NAME }}
+
+jobs:
+  build-and-push-backend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
+    
+    steps:
+      - name: Set IMAGE_NAME
+        run: |
+          echo "IMAGE_NAME=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.APP_NAME }}/${{ env.SERVICE_NAME }}" >> $GITHUB_ENV
+
+      - name: Set Cloud Run Version tag
+        run: |
+          echo "CLOUD_RUN_VERSION_TAG=v$(echo ${{ github.event.release.tag_name }} | tr '.' '-')" >> $GITHUB_ENV
+      
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+      
+      - name: Build and push Docker image
+        run: |
+          # Build and push the image with both the release tag and latest
+          gcloud builds submit restful-service/src \
+            --project ${{ secrets.GCP_PROJECT_ID }} \
+            --tag ${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }} \
+            --gcs-log-dir=gs://${{ secrets.GCP_LOGS_BUCKET_NAME }}/${{ env.APP_NAME }}
+      
+      - name: Add latest tag
+        run: |
+          gcloud artifacts docker tags add ${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }} \
+            ${{ env.IMAGE_NAME }}:latest \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --tag ${{ env.CLOUD_RUN_VERSION_TAG }} \
+            --allow-unauthenticated
+
+  build-and-upload-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install and use Node.js via nvm
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          # This loads nvm
+          nvm install # Installs version from .nvmrc
+          nvm use # Uses the installed version
+          npm install --global yarn
+      
+      - name: Install dependencies
+        run: yarn install
+      
+      - name: Build frontend
+        run: yarn build
+      
+      # Need auth and gcloud setup before uploading
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Upload frontend bundle to GCS tagged version
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          process_gcloudignore: false
+          path: dist
+          destination: ${{ env.BUCKET_NAME }}/apps/${{ env.APP_NAME }}/${{ github.event.release.tag_name }}
+          parent: false
+      
+      - name: Upload frontend bundle to GCS latest
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          process_gcloudignore: false
+          path: dist
+          destination: ${{ env.BUCKET_NAME }}/apps/${{ env.APP_NAME }}/latest
+          parent: false
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+      
+      - name: Invalidate Cloud CDN
+        run: |
+          gcloud compute url-maps invalidate-cdn-cache ${{ secrets.GCP_URL_MAP }} \
+            --project ${{ secrets.GCP_PROJECT_ID }} \
+            --path=/apps/${{ env.APP_NAME }}/latest/* \
+            --async
