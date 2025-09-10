@@ -1,4 +1,11 @@
 # Changelog
+
+## v2.1
+
+### Added
+ - Support for Lookml dashboards
+ - Improved README
+
 ## v2.0
 
 ### Added

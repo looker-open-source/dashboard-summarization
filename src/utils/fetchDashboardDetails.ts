@@ -23,24 +23,29 @@ export const fetchDashboardDetails = async (
     console.log("from function: ", dashboardId,dashboardFilters)
   const { description } = await core40SDK.ok(core40SDK.dashboard(dashboardId, 'description'));
 
-  const queries = await core40SDK.ok(core40SDK.dashboard_dashboard_elements(
-    dashboardId, 'query,result_maker,note_text,title,query_id'))
-    .then((res) => {
-      return res.filter((d) => d.query !== null || d.result_maker !== null)
-        .map((data) => {
-          const { query, note_text, title } = data;
-          if (data.query !== null) {
-            const { fields, dynamic_fields, view, model, filters, pivots, sorts, limit, column_limit, row_total, subtotals } = query;
-            const newFilters = applyFilterToListeners(data.result_maker?.filterables, filters || {}, dashboardFilters);
-            return { queryBody: { fields, dynamic_fields, view, model, filters: newFilters, pivots, sorts, limit, column_limit, row_total, subtotals }, note_text, title };
-          } else if (data.result_maker!.query !== null) {
-            const { fields, dynamic_fields, view, model, filters, pivots, sorts, limit, column_limit, row_total, subtotals } = data.result_maker!.query;
-            const newFilters = applyFilterToListeners(data.result_maker?.filterables, filters || {}, dashboardFilters);
-            return { queryBody: { fields, dynamic_fields, view, model, filters: newFilters, pivots, sorts, limit, column_limit, row_total, subtotals }, note_text, title };
-          } else {
-            return undefined;
-          }
-        });
+  let queries: any;
+  if (dashboardId.includes('::')) {
+    const { dashboard_elements } = await core40SDK.ok(core40SDK.dashboard(dashboardId, 'dashboard_elements'));
+    queries = dashboard_elements;
+  } else {
+    queries = await core40SDK.ok(core40SDK.dashboard_dashboard_elements(
+      dashboardId, 'query,result_maker,note_text,title,query_id'));
+  }
+
+  queries = queries.filter((d: any) => d.query !== null || d.result_maker !== null)
+    .map((data: any) => {
+      const { query, note_text, title } = data;
+      if (data.query !== null) {
+        const { fields, dynamic_fields, view, model, filters, pivots, sorts, limit, column_limit, row_total, subtotals } = query;
+        const newFilters = applyFilterToListeners(data.result_maker?.filterables, filters || {}, dashboardFilters);
+        return { queryBody: { fields, dynamic_fields, view, model, filters: newFilters, pivots, sorts, limit, column_limit, row_total, subtotals }, note_text, title };
+      } else if (data.result_maker?.query !== null) {
+        const { fields, dynamic_fields, view, model, filters, pivots, sorts, limit, column_limit, row_total, subtotals } = data.result_maker!.query;
+        const newFilters = applyFilterToListeners(data.result_maker?.filterables, filters || {}, dashboardFilters);
+        return { queryBody: { fields, dynamic_fields, view, model, filters: newFilters, pivots, sorts, limit, column_limit, row_total, subtotals }, note_text, title };
+      } else {
+        return undefined;
+      }
     });
 
   await extensionSDK.localStorageSetItem(`${dashboardId}:${JSON.stringify(dashboardFilters)}`, JSON.stringify({ dashboardFilters, dashboardId, queries, description }));
