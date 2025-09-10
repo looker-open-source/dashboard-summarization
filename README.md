@@ -75,7 +75,21 @@ This section describes how to set up the API server on Cloud Run powering the Ge
 
    > You may need to update your Node version or use a [Node version manager](https://github.com/nvm-sh/nvm) to change your Node version.
 
-4. Start the development server
+4. Authenticate into gcloud
+
+   ```bash
+   gcloud auth login && gcloud auth application-default login
+   ```
+
+5. Set environment variables
+
+   ```bash
+   export PROJECT="<YOUR_PROJECT_ID>"
+   export GENAI_CLIENT_SECRET="<YOUR_SECRET_VALUE>"
+   ```
+
+
+6. Start the development server
 
    ```bash
    npm run start
@@ -144,9 +158,7 @@ resource.labels.location = "us-central1"
 jsonPayload.component="dashboard-summarization-logs"
 ```
 
-
 ### 2. Looker Extension Framework Setup
-
 
 #### Getting Started for Local Development
 
