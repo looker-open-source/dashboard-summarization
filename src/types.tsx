@@ -31,23 +31,32 @@ export interface DashboardMetadata {
     },
     description?: string | undefined
 }
-export interface Query {
-    queryBody: {
-        fields: any;
-        dynamic_fields?: any;
-        view: any;
-        model: any;
-        filters?: any;
-        pivots?: any;
-        sorts?: any;
-        limit?: any;
-        column_limit?: any;
-        row_total?: any;
-        subtotals?: any;
-    };
+
+interface DashboardQuery {
+    fields: any;
+    dynamic_fields?: any;
+    view: any;
+    model: any;
+    filters?: any;
+    pivots?: any;
+    sorts?: any;
+    limit?: any;
+    column_limit?: any;
+    row_total?: any;
+    subtotals?: any;
+  }
+  
+  interface ResultMaker {
+    query: DashboardQuery;
+    filterables: any[];
+  }
+  
+  export interface DashboardElement {
+    query: DashboardQuery | null;
+    result_maker: ResultMaker | null;
     note_text: string;
     title: string;
-}
+  }
 
 export interface QuerySummary {
   queryTitle: string;

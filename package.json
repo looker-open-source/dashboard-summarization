@@ -1,7 +1,7 @@
 {
   "name": "dashboard-summarization",
-  "version": "0.0.1",
-  "description": "Bootstrapped Looker Extension with React and Typescript",
+  "version": "0.0.2",
+  "description": "Dashboard Summarization Looker Extension via Vertex AI",
   "main": "dist/bundle.js",
   "author": "yournamehere",
   "license": "Apache-2.0",
