@@ -221,9 +221,9 @@ GENAI_CLIENT_SECRET=<same secret value used to secure Cloud Run service>
           # file: "dashboard_summarization.js"
           url: "https://localhost:3000/dashboard_summarization.js"
           mount_points: {
-            dashboard_vis: yes
+            dashboard_vis: no
             dashboard_tile: yes
-            standalone: yes
+            standalone: no
           }
           entitlements: {
             local_storage: yes

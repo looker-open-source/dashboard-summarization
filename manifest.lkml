@@ -5,9 +5,9 @@ application: dashboard-summarization {
   label: "Dashboard Insights Powered by Vertex AI"
   url: "https://localhost:3000/dashboard_summarization.js"
   mount_points: {
-    dashboard_vis: yes
+    dashboard_vis: no
     dashboard_tile: yes
-    standalone: yes
+    standalone: no
   }
   entitlements: {
     local_storage: yes
